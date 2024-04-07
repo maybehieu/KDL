@@ -120,18 +120,37 @@ void test_lib()
     //std::cout << "loss: " << (0. - sum) / matrix.get_width();
 
     //
-	Matrix a(3, 10);
+	Matrix a(5, 3);
     a.randomize(0, 1);
-    std::cout << a;
-    std::cout << a.sum(0);
-    std::cout << a.sum(1);
-    std::cout << a.sum(-1);
+    Matrix b(5, 2);
+    b.randomize(0, 1);
+    std::cout << a << b;
+    //Matrix::shuffle(a, b);
+    /*std::cout << a << b;
+
+    std::cout << a.extract(2, 1);
+    b.drop(1, 1);
+    std::cout << b;
+    std::cout << a.extract(1, 2, 1);*/
+
+    std::cout << a.argmax(0);
 }
 
 void test_mlp()
 {
-    MLP mlp(16, 100, 26, .1, 1000, "relu");
-    mlp.test();
+    MLP mlp(16, 100, 26, .1, 100, 50, "relu");
+    //mlp.test();
+    Matrix X_train, y_train, X_test, y_test;
+    X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
+    y_train.load_data_txt(16000, 26, R"(../data/writing/y_train.txt)");
+    X_test.load_data_txt(4000, 16, R"(../data/writing/X_test.txt)");
+    y_test.load_data_txt(4000, 26, R"(../data/writing/y_test.txt)");
+
+    mlp.fit(X_train, y_train);
+
+    mlp.eval(X_test, y_test);
+
+    mlp.save_model(R"(../model/writing/)");
 }
 
 int main()

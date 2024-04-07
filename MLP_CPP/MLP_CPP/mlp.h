@@ -15,18 +15,24 @@ class MLP
 	double eta;
 	// epochs
 	int epochs;
+	int batch_size;
 	// activation
 	std::string activation;
 
 public:
 	MLP(size_t in_channel, size_t hidden_channel, size_t out_channel,
-		double lr, int epoch, std::string activation);
+		double lr, int epoch, int batch_size, std::string activation);
 
-	void training();
-	void eval();
-	void test();
+	void fit(const Matrix& X, const Matrix& y);
+	Matrix predict(const Matrix& X);
 	std::vector<Matrix> forward(const Matrix& inputs);
-	void backward(std::vector<Matrix> datas, const Matrix& X, const Matrix& y);
+	void backward(const std::vector<Matrix>& datas, const Matrix& X, const Matrix& y);
+
+	void eval(const Matrix& X, const Matrix& y);
+	void test();
+
+	void load_model(const std::string& path);
+	void save_model(const std::string& path);
 
 	Matrix softmax(const Matrix& matrix);
 	Matrix cross_entropy_loss(const Matrix& y, const Matrix& yhat);

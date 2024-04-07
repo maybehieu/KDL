@@ -1,5 +1,4 @@
 #pragma once
-#include <stdexcept>
 #include <iostream>
 #include <vector>
 #include <tuple>
@@ -38,7 +37,11 @@ public:
 	inline void print_shape() { std::cout << "{ " << m_rows << ", " << m_cols << " }\n"; }
 
 	// data
-	Matrix& load_data_str(const size_t rows, const size_t cols, const std::string& s);
+	Matrix& load_data_txt(const size_t rows, const size_t cols, const std::string& s);
+	Matrix& load_data_csv(const size_t rows, const size_t cols, const std::string& file, const bool isHeader = true);
+	Matrix& load_data(const std::string& file);
+
+	void save_data(const std::string& file);
 
 	bool check_dims(const Matrix& other) const;
 	Matrix clone()
@@ -49,6 +52,11 @@ public:
 	}
 	void randomize(double min, double max);
 	void soft_reset();
+	Matrix& drop(const int& index, const int& type);
+	Matrix extract(const int& index, const int& type);
+	Matrix extract(const int& start_index, const int& end_index, const int& type);
+	Matrix argmax(const int& type);
+
 	Matrix& element_wise_mul(const Matrix& other);
 	Matrix& transpose();
 	Matrix& square();
@@ -65,6 +73,8 @@ public:
 	static Matrix element_wise_mul(const Matrix& left, const Matrix& right);
 	static Matrix square(const Matrix& matrix);
 	static Matrix transpose(const Matrix& matrix);
+
+	static void shuffle(Matrix& X, Matrix& y);
 
 	// override operations
 	Matrix& operator =(const Matrix& matrix);							// get/ copy matrix

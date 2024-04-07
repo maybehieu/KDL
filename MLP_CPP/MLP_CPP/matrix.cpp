@@ -362,7 +362,7 @@ Matrix Matrix::mismatch_dim_add(const Matrix& left, const Matrix& right)
 	return result;
 }
 
-Matrix& Matrix::load_data_str(const size_t rows, const size_t cols, const std::string& filepath)
+Matrix& Matrix::load_data_txt(const size_t rows, const size_t cols, const std::string& filepath)
 {
 	m_rows = rows, m_cols = cols;
 	std::vector<double> data = {};
@@ -398,6 +398,241 @@ Matrix& Matrix::load_data_str(const size_t rows, const size_t cols, const std::s
 	}
 #endif
 	return *this;
+}
+
+Matrix& Matrix::load_data_csv(const size_t rows, const size_t cols, const std::string& filepath, const bool header)
+{
+	m_rows = rows, m_cols = cols;
+	std::vector<double> data = {};
+	std::ifstream file(filepath);
+	if (!file.is_open())
+	{
+		std::cout << "Failed to open file " + filepath << "\n";
+		return *this;
+	}
+	std::string line;
+	if (header)
+	{
+		std::getline(file, line);
+	}
+	while (std::getline(file, line))
+	{
+		std::istringstream iss(line);
+		std::string temp;
+		char sep = ',';
+		while (std::getline(iss, temp, sep))
+		{
+			try
+			{
+				data.push_back(std::stod(temp));
+			}
+			catch (...)
+			{
+				std::cout << "Failed to parse " << temp << "\n";
+			}
+		}
+	}
+	m_data = std::move(data);
+#ifdef _DEBUG
+	if (m_data.size() != m_rows * m_cols)
+	{
+		throw MatrixError("Load data from string failed! Mismatch size!");
+	}
+#endif
+	return *this;
+}
+
+Matrix& Matrix::load_data(const std::string& file)
+{
+	std::ifstream inFile;
+	inFile.open(file, std::ios::in | std::ios::binary);
+
+	unsigned int rows, columns;
+	inFile.read((char*)&rows, sizeof(rows));
+	inFile.read((char*)&columns, sizeof(columns));
+	m_rows = rows, m_cols = columns;
+	double* m = new double[rows * columns];
+	inFile.read((char*)m, sizeof(double) * rows * columns);
+	std::vector<double> mat(m, m + rows * columns);
+	m_data = std::move(mat);
+	delete[] m;
+
+	return *this;
+}
+
+void Matrix::save_data(const std::string& file)
+{
+	std::ofstream outFile;
+	outFile.open(file, std::ios::binary);
+
+	outFile.write((char*)(&m_rows), sizeof(m_rows));
+	outFile.write((char*)(&m_cols), sizeof(m_cols));
+	outFile.write((char*)&m_data[0], sizeof(double) * m_rows * m_cols);
+}
+
+void Matrix::shuffle(Matrix& X, Matrix& y)
+{
+#ifdef _DEBUG
+	if (X.m_rows != y.m_rows)
+	{
+		throw MatrixError("Matrices have different rows!");
+	}
+#endif
+	// Create a permutation vector
+	std::vector<size_t> perm(X.m_rows);
+	for (size_t i = 0; i < X.m_rows; ++i) {
+		perm[i] = i;
+	}
+
+	// Shuffle the permutation vector
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(perm.begin(), perm.end(), g);
+
+	// Apply the permutation to both matrices
+	std::vector<double> tempX(X.m_data.size());
+	std::vector<double> tempY(y.m_data.size());
+	for (size_t i = 0; i < X.m_rows; ++i) {
+		std::copy(X.m_data.begin() + perm[i] * X.m_cols, X.m_data.begin() + perm[i] * X.m_cols + X.m_cols, tempX.begin() + i * X.m_cols);
+		std::copy(y.m_data.begin() + perm[i] * y.m_cols, y.m_data.begin() + perm[i] * y.m_cols + y.m_cols, tempY.begin() + i * y.m_cols);
+	}
+
+	X.m_data.swap(tempX);
+	y.m_data.swap(tempY);
+}
+
+Matrix& Matrix::drop(const int& index, const int& type)
+{
+	// type: 0-row, 1-col
+#ifdef _DEBUG
+	if (index >= m_rows && type == 0)
+	{
+		throw MatrixError("Index exceed number of rows!");
+	}
+	if (index >= m_cols && type == 1)
+	{
+		throw MatrixError("Index exceed number of columns!");
+	}
+#endif
+	if (type == 0)
+	{
+		// Remove the row from the data vector
+		m_data.erase(m_data.begin() + index * m_cols, m_data.begin() + (index + 1) * m_cols);
+		m_rows--;
+	}
+	if (type == 1)
+	{
+		// Create a temporary vector to hold the new data without the dropped column
+		std::vector<double> newData;
+		newData.reserve(m_data.size() - m_rows); // Reserve space for the new data
+		// Copy all elements except those in the dropped column
+		for (size_t i = 0; i < m_data.size(); ++i) {
+			if (i % m_cols != index) { // Skip elements in the dropped column
+				newData.push_back(m_data[i]);
+			}
+		}
+		// Replace the old data with the new data
+		m_data = std::move(newData);
+		--m_cols;
+	}
+	return *this;
+}
+
+Matrix Matrix::extract(const int& index, const int& type)
+{
+	// type: 0-row, 1-col
+#ifdef _DEBUG
+	if (index > m_rows && type == 0)
+	{
+		throw MatrixError("Index exceed number of rows!");
+	}
+	if (index > m_cols && type == 1)
+	{
+		throw MatrixError("Index exceed number of columns!");
+	}
+#endif
+	if (type == 0)
+	{
+		Matrix result(1, m_cols);
+		std::copy(m_data.begin() + index * m_cols, m_data.begin() + index * m_cols + m_cols, result.m_data.begin());
+		return result;
+	}
+	if (type == 1)
+	{
+		Matrix result(m_rows, 1);
+		for (size_t i = 0; i < m_rows; ++i) {
+			result.m_data[i] = m_data[i * m_cols + index];
+		}
+		return result;
+	}
+}
+
+Matrix Matrix::extract(const int& start, const int& end, const int& type)
+{
+	// type: 0-row, 1-col
+#ifdef _DEBUG
+	if ((end > m_rows || start > m_rows) && type == 0)
+	{
+		throw MatrixError("Index exceed number of rows!");
+	}
+	if ((end > m_cols || start > m_rows) && type == 1)
+	{
+		throw MatrixError("Index exceed number of columns!");
+	}
+#endif
+	if (type == 0)
+	{
+		Matrix result(end - start + 1, m_cols);
+		for (size_t i = start; i <= end; i++)
+			std::copy(m_data.begin() + i * m_cols, m_data.begin() + i * m_cols + m_cols, result.m_data.begin() + (i - start) * m_cols);
+		return result;
+	}
+	if (type == 1)
+	{
+		Matrix result(m_rows, end - start + 1);
+		for (size_t i = 0; i < m_rows; i++) {
+			for (size_t j = start; j <= end; j++) {
+				result.m_data[i * result.m_cols + (j - start)] = m_data[i * m_cols + j];
+			}
+		}
+		return result;
+	}
+}
+
+Matrix Matrix::argmax(const int& type)
+{
+	if (type == 0) 
+	{ // find max along rows
+		Matrix result(m_rows, 1);
+		for (size_t row = 0; row < m_rows; ++row) {
+			double maxElement = m_data[row * m_cols];
+			size_t maxIndex = 0;
+			for (size_t col = 1; col < m_cols; ++col) {
+				if (m_data[row * m_cols + col] > maxElement) {
+					maxElement = m_data[row * m_cols + col];
+					maxIndex = col;
+				}
+			}
+			result.m_data[row] = static_cast<double>(maxIndex);
+		}
+		return result;
+	}
+	if (type == 1)
+	{ // find max along columns
+		Matrix result(1, m_cols);
+		for (size_t col = 0; col < m_cols; ++col) {
+			double maxElement = m_data[col];
+			size_t maxIndex = 0;
+			for (size_t row = 1; row < m_rows; ++row) {
+				if (m_data[row * m_cols + col] > maxElement) {
+					maxElement = m_data[row * m_cols + col];
+					maxIndex = row;
+				}
+			}
+			result.m_data[col] = static_cast<double>(maxIndex);
+		}
+		return result;
+	}
 }
 
 void Matrix::randomize(double min, double max)
