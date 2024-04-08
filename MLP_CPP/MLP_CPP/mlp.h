@@ -33,7 +33,4 @@ public:
 
 	void load_model(const std::string& path);
 	void save_model(const std::string& path);
-
-	Matrix softmax(const Matrix& matrix);
-	Matrix cross_entropy_loss(const Matrix& y, const Matrix& yhat);
 };

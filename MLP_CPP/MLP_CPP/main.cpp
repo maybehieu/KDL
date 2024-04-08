@@ -1,5 +1,7 @@
 #include "matrix.h"
 #include "mlp.h"
+#include "nn.h"
+
 void test_lib()
 {
     /*Matrix a(2, 2);
@@ -153,9 +155,16 @@ void test_mlp()
     mlp.save_model(R"(../model/writing/)");
 }
 
+void test_nn()
+{
+    NeuralNet net(std::vector<int>{16, 10, 15, 10, 26}, .1, 100, 50, "relu", "sgd");
+    net.test();
+}
+
 int main()
 {
     //test_lib();
-    test_mlp();
+    //test_mlp();
+    test_nn();
 	return 0;
 }

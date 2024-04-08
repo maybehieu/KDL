@@ -365,6 +365,7 @@ Matrix Matrix::mismatch_dim_add(const Matrix& left, const Matrix& right)
 Matrix& Matrix::load_data_txt(const size_t rows, const size_t cols, const std::string& filepath)
 {
 	m_rows = rows, m_cols = cols;
+	m_data = {};
 	std::vector<double> data = {};
 	std::ifstream file(filepath);
 	if (!file.is_open())

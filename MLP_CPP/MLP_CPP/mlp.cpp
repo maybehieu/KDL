@@ -2,27 +2,6 @@
 #include "utils.h"
 #include <filesystem>
 
-// activations
-double relu(double x)
-{
-	if (x <= 0.0) return 0.0;
-	return x;
-}
-double d_relu(double x)
-{
-	if (x <= 0) return 0.0;
-	return 1.0;
-}
-double sigmoid(double x)
-{
-	return 1. / (1. + std::exp(-1 * x));
-}
-double d_sigmoid(double x)
-{
-	return x * (1 - x);
-}
-
-
 MLP::MLP(size_t in_channel, size_t hidden_channel, size_t out_channel, double lr, int epoch, int batch_size, std::string activation)
 {
 	W1 = Matrix(in_channel, hidden_channel);
@@ -78,24 +57,6 @@ void MLP::backward(const std::vector<Matrix>& datas, const Matrix& X, const Matr
 	b1 += -eta * d_bias1;
 	W2 += -eta * d_weight2;
 	b2 += -eta * d_bias2;
-}
-
-Matrix MLP::softmax(const Matrix& matrix)
-{
-	Matrix max = matrix.max();
-	Matrix _V = Matrix::mismatch_dim_subtract(matrix, max);
-	Matrix e_V = Matrix::apply_func(_V, [](double x) {return std::exp(x); });
-	Matrix sum = e_V.sum(0);
-	Matrix Z = Matrix::mismatch_dim_divide(e_V, sum);
-	return Z;
-}
-
-Matrix MLP::cross_entropy_loss(const Matrix& y, const Matrix& yhat)
-{
-	Matrix log_m = Matrix::apply_func(yhat, [](double x) {return std::log(x); });
-	Matrix mul = Matrix::element_wise_mul(y, log_m);
-	Matrix sum = mul.sum(-1);
-	return (0. - sum) / yhat.get_width();
 }
 
 void MLP::fit(const Matrix& X_in, const Matrix& y_in)
@@ -188,10 +149,10 @@ void MLP::test()
 	/*X.randomize(-1,1);
 	y.randomize(1, 2);*/
 
-	X.load_data_txt(16, 50, R"(F:\Documents\Code\Letter-Recognition-Using-Multi-layer-Perceptron-master\xxbatch.txt)");
-	y.load_data_txt(26, 50, R"(F:\Documents\Code\Letter-Recognition-Using-Multi-layer-Perceptron-master\xybatch.txt)");
-	W1.load_data_txt(16, 100,R"(F:\Documents\Code\Letter-Recognition-Using-Multi-layer-Perceptron-master\xw1.txt)");
-	W2.load_data_txt(100, 26, R"(F:\Documents\Code\Letter-Recognition-Using-Multi-layer-Perceptron-master\xw2.txt)");
+	X.load_data_txt(16, 50, R"(../data/test/xxbatch.txt)");
+	y.load_data_txt(26, 50, R"(../data/test/xybatch.txt)");
+	W1.load_data_txt(16, 100,R"(../data/test/xw1.txt)");
+	W2.load_data_txt(100, 26, R"(../data/test/xw2.txt)");
 
 	// forward
 	std::vector<Matrix> net_outs = forward(X);
