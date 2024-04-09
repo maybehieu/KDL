@@ -10,8 +10,8 @@ MLP::MLP(size_t in_channel, size_t hidden_channel, size_t out_channel, double lr
 	b2 = Matrix(out_channel, 1);
 
 	// initialize weights with random
-	W1.randomize(-1, 1);
-	W2.randomize(-1, 1);
+	W1.randomize(0, 1, .01);
+	W2.randomize(0, 1, .01);
 
 	eta = lr;
 	epochs = epoch;
@@ -93,13 +93,14 @@ void MLP::fit(const Matrix& X_in, const Matrix& y_in)
 		epoch_losses.push_back(std::accumulate(batch_losses.begin(), batch_losses.end(), .0) / batch_losses.size());
 		if (epoch % 50 == 0)
 		{
-			printf("Epoch %d/%d: training loss: %f, time taken: %f s\n", epoch, epochs, epoch_losses.back(), (getTickcount() - e_time) / 1000.0);
+			double train_accuracy = eval(X, y);
+			printf("Epoch %d/%d: training loss: %f, training accuracy: %f, time taken: %f s\n", epoch, epochs, epoch_losses.back(), train_accuracy, (getTickcount() - e_time) / 1000.0);
 		}
 	}
 	printf("Training complete! Time taken: %f s\n", (getTickcount() - time) / 1000.0);
 }
 
-void MLP::eval(const Matrix& X_in, const Matrix& y_in)
+void MLP::print_eval(const Matrix& X_in, const Matrix& y_in)
 {
 	Matrix X(X_in);
 	Matrix y(y_in);
@@ -121,6 +122,30 @@ void MLP::eval(const Matrix& X_in, const Matrix& y_in)
 	for (size_t i = 0; i < y_pred.m_data.size(); i++)
 		acc.push_back(y_pred.m_data[i] == y.m_data[i] ? 1 : 0);
 	printf("Model accuracy: %f\n", std::accumulate(acc.begin(), acc.end(), .0) / acc.size());
+}
+
+double MLP::eval(const Matrix& X_in, const Matrix& y_in)
+{
+	Matrix X(X_in);
+	Matrix y(y_in);
+	double N = X.get_width();
+
+	Matrix y_pred = predict(X);
+	y.transpose();
+	y = y.argmax(1);
+
+#ifdef _DEBUG
+	if (y_pred.m_data.size() != y.m_data.size())
+	{
+		throw MatrixError("Prediction output doesn't match ground truth shape!");
+	}
+#endif
+
+	// accuracy
+	std::vector<float> acc;
+	for (size_t i = 0; i < y_pred.m_data.size(); i++)
+		acc.push_back(y_pred.m_data[i] == y.m_data[i] ? 1 : 0);
+	return std::accumulate(acc.begin(), acc.end(), .0) / acc.size();
 }
 
 Matrix MLP::predict(const Matrix& X_in)

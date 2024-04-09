@@ -28,30 +28,67 @@ struct net_result
 	}
 };
 
-class Optimizer
-{
-	std::string name;
-	float learning_rate;
-
-
-
-	void optimizer_step();
-
-	void sgd_step();
-	void adam_step();
-
-public:
-	Optimizer(std::string name);
-
-	Optimizer();
-};
-
-class NeuralNet
+struct parameters
 {
 	// weights of layers
 	std::vector<Matrix> weights;
 	// biases of each weight
 	std::vector<Matrix> biases;
+
+	parameters() = default;
+
+	parameters(const std::vector<Matrix>& weights, const std::vector<Matrix>& biases)
+	{
+		this->weights = weights;
+		this->biases = biases;
+	}
+
+	parameters(const parameters& other)
+	{
+		weights = other.weights;
+		biases = other.biases;
+	}
+};
+
+class Optimizer
+{
+	std::string name;
+	double learning_rate;
+
+	// adam
+	int cnt;
+	std::vector<Matrix> v_w;	// first moment of gradient of weights
+	std::vector<Matrix> s_w;	// second moment of gradient of weights
+	std::vector<Matrix> v_b;	// first moment of gradient of biases
+	std::vector<Matrix> s_b;	// second moment of gradient of biases
+	double beta1 = .9;
+	double beta2 = .999;
+	double epsilon = 1e-8;
+
+
+	void sgd_step(parameters& params, const net_result& grads);
+	void adam_step(parameters& params, const net_result& grads);
+
+public:
+	Optimizer() = default;
+
+	// sgd
+	Optimizer(double lr);
+
+	// adam
+	Optimizer(const std::vector<Matrix>& weights, const std::vector<Matrix>& biases, 
+		const double& lr, const double& b1, const double& b2, const double& e );
+
+	void step(parameters& params, const net_result& grads);
+};
+
+class NeuralNet
+{
+	//// weights of layers
+	//std::vector<Matrix> weights;
+	//// biases of each weight
+	//std::vector<Matrix> biases;
+	parameters parameters;
 	// learning rate
 	double eta;
 	// epochs
@@ -73,10 +110,11 @@ public:
 
 	void fit(const Matrix& X, const Matrix& y);
 	Matrix predict(const Matrix& X);
-	net_result forward(const Matrix& inputs);
+	net_result forward(const Matrix& inputs, bool activated);
 	net_result backward(const net_result& datas, const Matrix& X, const Matrix& y);
 
-	void eval(const Matrix& X, const Matrix& y);
+	void print_eval(const Matrix& X, const Matrix& y);
+	double eval(const Matrix& X, const Matrix& y);
 	void test();
 
 	void load_model(const std::string& path);

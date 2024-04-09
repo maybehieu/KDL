@@ -44,3 +44,8 @@ Matrix cross_entropy_loss(const Matrix& y, const Matrix& yhat)
 	Matrix sum = mul.sum(-1);
 	return (0. - sum) / yhat.get_width();
 }
+
+void save_parameters_to_file(const parameters& params, const std::string& directory)
+{
+	
+}

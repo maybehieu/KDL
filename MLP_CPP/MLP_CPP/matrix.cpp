@@ -179,6 +179,14 @@ Matrix operator +(const Matrix& left, const Matrix& right) {
 	return result;
 }
 
+Matrix operator +(const Matrix& left, double scalar) {
+	Matrix result(left);
+	for (size_t i = 0; i < left.m_rows; i++)
+		for (size_t j = 0; j < left.m_cols; j++)
+			result(i, j) = left(i, j) + scalar;
+	return result;
+}
+
 Matrix operator *(const Matrix& matrix, double scalar) {
 	Matrix result(matrix);
 	for (size_t i = 0; i < matrix.m_rows; i++)
@@ -636,13 +644,13 @@ Matrix Matrix::argmax(const int& type)
 	}
 }
 
-void Matrix::randomize(double min, double max)
+void Matrix::randomize(double min, double max, double scalar)
 {
 	std::random_device rand;
 	std::mt19937 engine(rand());
 	std::uniform_real_distribution<double> valueDistribution(min, max);
 	for (size_t i = 0; i < m_rows * m_cols; i++)
-		m_data[i] = valueDistribution(engine);
+		m_data[i] = valueDistribution(engine) * scalar;
 }
 
 void Matrix::soft_reset()
@@ -739,6 +747,20 @@ Matrix& Matrix::transpose()
 	return *this;
 }
 
+Matrix& Matrix::power(double x)
+{
+	for (size_t i = 0; i < m_data.size(); i++)
+		m_data[i] = std::pow(m_data[i], x);
+	return *this;
+}
+
+Matrix& Matrix::sqrt()
+{
+	for (size_t i = 0; i < m_data.size(); i++)
+		m_data[i] = std::sqrt(m_data[i]);
+	return *this;
+}
+
 Matrix Matrix::element_wise_mul(const Matrix& left, const Matrix& right)
 {
 #ifdef _DEBUG
@@ -767,4 +789,20 @@ Matrix Matrix::transpose(const Matrix& matrix)
 				transposed(j, i) = matrix(i, j);
 	}
 	return transposed;
+}
+
+Matrix Matrix::power(const Matrix& mat, const double& x)
+{
+	Matrix result(mat);
+	for (size_t i = 0; i < result.m_data.size(); i++)
+		result.m_data[i] = std::pow(result.m_data[i], x);
+	return result;
+}
+
+Matrix Matrix::sqrt(const Matrix& mat)
+{
+	Matrix result(mat);
+	for (size_t i = 0; i < result.m_data.size(); i++)
+		result.m_data[i] = std::sqrt(result.m_data[i]);
+	return result;
 }

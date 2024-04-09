@@ -50,7 +50,7 @@ public:
 		for (auto z : m_data) data.push_back(z);
 		return Matrix(data, m_rows, m_cols);
 	}
-	void randomize(double min, double max);
+	void randomize(double min, double max, double scalar = 1.0);
 	void soft_reset();
 	Matrix& drop(const int& index, const int& type);
 	Matrix extract(const int& index, const int& type);
@@ -59,6 +59,8 @@ public:
 
 	Matrix& element_wise_mul(const Matrix& other);
 	Matrix& transpose();
+	Matrix& power(double x);
+	Matrix& sqrt();
 	Matrix& square();
 	Matrix  max();
 	Matrix  max() const;
@@ -73,6 +75,8 @@ public:
 	static Matrix element_wise_mul(const Matrix& left, const Matrix& right);
 	static Matrix square(const Matrix& matrix);
 	static Matrix transpose(const Matrix& matrix);
+	static Matrix power(const Matrix& mat, const double& x);
+	static Matrix sqrt(const Matrix& mat);
 
 	static void shuffle(Matrix& X, Matrix& y);
 
@@ -100,6 +104,7 @@ public:
 	friend std::ostream& operator << (std::ostream& out, std::tuple<size_t, size_t> m);
 
 	friend Matrix operator +(const Matrix& left, const Matrix& right);
+	friend Matrix operator +(const Matrix& mat, double scalar);
 	friend Matrix operator -(const Matrix& left, const Matrix& right);
 	friend Matrix operator -(double scalar, const Matrix& matrix);
 	friend Matrix operator *(const Matrix& left, const Matrix& right);

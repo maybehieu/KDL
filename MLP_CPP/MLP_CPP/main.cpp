@@ -140,7 +140,7 @@ void test_lib()
 
 void test_mlp()
 {
-    MLP mlp(16, 100, 26, .1, 100, 50, "relu");
+    MLP mlp(16, 100, 26, .1, 5000, 1000, "relu");
     //mlp.test();
     Matrix X_train, y_train, X_test, y_test;
     X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
@@ -150,15 +150,25 @@ void test_mlp()
 
     mlp.fit(X_train, y_train);
 
-    mlp.eval(X_test, y_test);
+    mlp.print_eval(X_test, y_test);
 
-    mlp.save_model(R"(../model/writing/)");
+    //mlp.save_model(R"(../model/writing/)");
 }
 
 void test_nn()
 {
-    NeuralNet net(std::vector<int>{16, 10, 15, 10, 26}, .1, 100, 50, "relu", "sgd");
-    net.test();
+    NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, 0.0007, 10000, 100, "relu", "adam");
+    //net.test();
+
+    Matrix X_train, y_train, X_test, y_test;
+    X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
+    y_train.load_data_txt(16000, 26, R"(../data/writing/y_train.txt)");
+    X_test.load_data_txt(4000, 16, R"(../data/writing/X_test.txt)");
+    y_test.load_data_txt(4000, 26, R"(../data/writing/y_test.txt)");
+
+    net.fit(X_train, y_train);
+
+    net.print_eval(X_test, y_test);
 }
 
 int main()

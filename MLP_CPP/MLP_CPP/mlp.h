@@ -28,7 +28,8 @@ public:
 	std::vector<Matrix> forward(const Matrix& inputs);
 	void backward(const std::vector<Matrix>& datas, const Matrix& X, const Matrix& y);
 
-	void eval(const Matrix& X, const Matrix& y);
+	void print_eval(const Matrix& X, const Matrix& y);
+	double eval(const Matrix& X, const Matrix& y);
 	void test();
 
 	void load_model(const std::string& path);
