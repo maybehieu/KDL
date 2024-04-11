@@ -2,13 +2,14 @@
 
 #include "utils.h"
 
-Optimizer::Optimizer(double lr)
+Optimizer::Optimizer(double lr, double batch_sz)
 {
 	name = "sgd";
 	learning_rate = lr;
+	batch_size = batch_sz;
 }
 
-Optimizer::Optimizer(const std::vector<Matrix>& weights, const std::vector<Matrix>& biases, const double& lr, const double& b1 = .9, const double& b2 = .999, const double& e = 1e-8)
+Optimizer::Optimizer(const std::vector<Matrix>& weights, const std::vector<Matrix>& biases, const double& lr, const double& batch_sz, const double& b1 = .9, const double& b2 = .999, const double& e = 1e-8)
 {
 	name = "adam";
 	for (const Matrix& w : weights)
@@ -25,6 +26,7 @@ Optimizer::Optimizer(const std::vector<Matrix>& weights, const std::vector<Matri
 
 	cnt = 0;
 	learning_rate = lr;
+	batch_size = batch_sz;
 	beta1 = b1;
 	beta2 = b2;
 	epsilon = e;
@@ -33,11 +35,16 @@ Optimizer::Optimizer(const std::vector<Matrix>& weights, const std::vector<Matri
 void Optimizer::sgd_step(parameters& params, const net_result& grads)
 {
 	parameters result(params);
+	net_result g(grads);
 	int N = params.weights.size();
+
+	std::for_each(g.grad_weights.begin(), g.grad_weights.end(), [this](Matrix& m) {return m / batch_size; });
+	std::for_each(g.grad_biases.begin(), g.grad_biases.end(), [this](Matrix& m) {return m / batch_size; });
+
 	for (int i = 0; i < N; i++)
 	{
-		result.weights[i] = params.weights[i] - learning_rate * grads.grad_weights[N - 1 - i];
-		result.biases[i] = params.biases[i] - learning_rate * grads.grad_biases[N - 1 - i];
+		result.weights[i] = params.weights[i] - learning_rate * g.grad_weights[N - 1 - i];
+		result.biases[i] = params.biases[i] - learning_rate * g.grad_biases[N - 1 - i];
 	}
 	params = result;
 }
@@ -82,16 +89,29 @@ void Optimizer::step(parameters& params, const net_result& grads)
 
 NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layers, double lr, int epoch, int batch_size, std::string activation, std::string optimizer)
 {
+	// version 2
 	// create weight matrices
-	parameters.weights.push_back(Matrix(100, in_channel));
+	parameters.weights.push_back(Matrix(in_channel, 100));
 	for (int i = 0; i < num_hidden_layers - 1; i++)
 		parameters.weights.push_back(Matrix(100, 100));
-	parameters.weights.push_back(Matrix(out_channel, in_channel));
+	parameters.weights.push_back(Matrix(100, out_channel));
 
 	// create bias matrices
 	for (int i = 0; i < num_hidden_layers; i++)
 		parameters.biases.push_back(Matrix(100, 1));
 	parameters.biases.push_back(Matrix(out_channel, 1));
+
+	// version 1
+	//// create weight matrices
+	//parameters.weights.push_back(Matrix(100, in_channel));
+	//for (int i = 0; i < num_hidden_layers - 1; i++)
+	//	parameters.weights.push_back(Matrix(100, 100));
+	//parameters.weights.push_back(Matrix(out_channel, in_channel));
+
+	//// create bias matrices
+	//for (int i = 0; i < num_hidden_layers; i++)
+	//	parameters.biases.push_back(Matrix(100, 1));
+	//parameters.biases.push_back(Matrix(out_channel, 1));
 
 	// initialize weights with random values
 	std::for_each(parameters.weights.begin(), parameters.weights.end(), [](Matrix& m) {return m.randomize(0, 1, .01); });
@@ -101,23 +121,34 @@ NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layer
 	this->batch_size = batch_size;
 	this->activation = activation;
 
-	this->optimizer = Optimizer(eta);
+	this->optimizer = Optimizer(eta, this->batch_size);
 	if (optimizer == "adam")
 	{
-		this->optimizer = Optimizer(parameters.weights, parameters.biases, eta);
+		this->optimizer = Optimizer(parameters.weights, parameters.biases, eta, this->batch_size);
 	}
 }
 
 NeuralNet::NeuralNet(std::vector<int> detailed_layers, double lr, int epoch, int batch_size, std::string activation, std::string optimizer)
 {
-	for (int i = 1; i < detailed_layers.size(); i++)
+	// version 2
+	for (int i = 0; i < detailed_layers.size() - 1; i++)
 	{
 		// create weight matrices
-		parameters.weights.push_back(Matrix(detailed_layers[i], detailed_layers[i-1]));
-		
+		parameters.weights.push_back(Matrix(detailed_layers[i], detailed_layers[i + 1]));
+
 		// create bias matrices
-		parameters.biases.push_back(Matrix(detailed_layers[i], 1));
+		parameters.biases.push_back(Matrix(detailed_layers[i + 1], 1));
 	}
+
+	//// version 1
+	//for (int i = 1; i < detailed_layers.size(); i++)
+	//{
+	//	// create weight matrices
+	//	parameters.weights.push_back(Matrix(detailed_layers[i], detailed_layers[i-1]));
+	//	
+	//	// create bias matrices
+	//	parameters.biases.push_back(Matrix(detailed_layers[i], 1));
+	//}
 	
 	// initialize weights with random values
 	std::for_each(parameters.weights.begin(), parameters.weights.end(), [](Matrix& m) {return m.randomize(-1, 1, .01); });
@@ -126,10 +157,10 @@ NeuralNet::NeuralNet(std::vector<int> detailed_layers, double lr, int epoch, int
 	epochs = epoch;
 	this->batch_size = batch_size;
 	this->activation = activation;
-	this->optimizer = Optimizer(eta);
+	this->optimizer = Optimizer(eta, this->batch_size);
 	if (optimizer == "adam")
 	{
-		this->optimizer = Optimizer(parameters.weights, parameters.biases, eta);
+		this->optimizer = Optimizer(parameters.weights, parameters.biases, eta, this->batch_size);
 	}
 }
 
@@ -148,31 +179,59 @@ net_result NeuralNet::forward(const Matrix& X, bool activate_last)
 	/// feed forward process:
 	/// 
 
-
+	// version 2
 	// forward through each 'hidden layer'
 	for (int i = 0; i < parameters.weights.size() - 1; i++)
 	{
 		inputs.push_back(input);
 
-		mul = parameters.weights[i] * input;
+		mul = Matrix::transpose(parameters.weights[i]) * input;
 		layer = mul + parameters.biases[i].broadcast(mul);
-		// next_input = last_activ;
-		input = Matrix::apply_func(layer, activation == "relu" ? relu : sigmoid);
+		layers.push_back(layer);
 
-		//layers.push_back(layer);
-		activations.push_back(input);
+		activ = Matrix::apply_func(layer, activation == "relu" ? relu : sigmoid);
+		activations.push_back(activ);
+
+		// next_input = last_activ;
+		input = activ;
 	}
 	// forward for last/output layer
-	mul = parameters.weights.back() * input;
+	mul = Matrix::transpose(parameters.weights.back()) * input;
 	layer = mul + parameters.biases.back().broadcast(mul);
 	if (activate_last)
 		yhat = softmax(layer);
 	else
 		yhat = layer;
 
-	//inputs.push_back(input);
-	//layers.push_back(layer);
+	inputs.push_back(input);
+	layers.push_back(layer);
 	//activations.push_back(yhat);
+
+	// version 1
+	//// forward through each 'hidden layer'
+	//for (int i = 0; i < parameters.weights.size() - 1; i++)
+	//{
+	//	inputs.push_back(input);
+
+	//	mul = parameters.weights[i] * input;
+	//	layer = mul + parameters.biases[i].broadcast(mul);
+	//	// next_input = last_activ;
+	//	input = Matrix::apply_func(layer, activation == "relu" ? relu : sigmoid);
+
+	//	//layers.push_back(layer);
+	//	activations.push_back(input);
+	//}
+	//// forward for last/output layer
+	//mul = parameters.weights.back() * input;
+	//layer = mul + parameters.biases.back().broadcast(mul);
+	//if (activate_last)
+	//	yhat = softmax(layer);
+	//else
+	//	yhat = layer;
+
+	////inputs.push_back(input);
+	//layers.push_back(layer);
+	////activations.push_back(yhat);
 
 
 	return net_result(inputs, layers, activations, yhat);
@@ -192,42 +251,78 @@ net_result NeuralNet::backward(const net_result& datas, const Matrix& X, const M
 	// error with normalization
 	Matrix d_activ = (yhat - y) / y.get_width();
 
-	// last layer of net
-	Matrix weight = activs.back();
+	// version 2
+	Matrix weight;
 	Matrix activ;
 	Matrix input;
+	Matrix layer;
 
-	Matrix d_weight = d_activ * Matrix::transpose(weight);
+	Matrix d_weight = inputs.back() * Matrix::transpose(d_activ);		// gradient of softmax
 	Matrix d_bias = d_activ.sum(1);
-	Matrix prev_d_activ = Matrix::transpose(parameters.weights.back()) * d_activ;
 
-	d_weights.push_back(d_weight);		// W(n)
-	d_biases.push_back(d_bias);			// B(n)
-	d_activs.push_back(prev_d_activ);	// A(n-1)
+	d_activs.push_back(d_activ);
+	d_weights.push_back(d_weight);
+	d_biases.push_back(d_bias);
 
-	// remaining layers in backward order
-	for (int i = parameters.weights.size() - 2; i >= 0; --i)
+	// calculating for parameters at layer i with i = len(layers) - 1 -> 2
+	for (int i = parameters.weights.size() - 1; i > 0; --i)
 	{
-		// layer-Z, activation-A
-		// note: non-derivative weight/layer and bias
-		input = inputs[i];
-		weight = parameters.weights[i];
-		activ = activs[i];
+		inputs.pop_back();
+		layers.pop_back();
 
-		d_activ = d_activs.back();
-		d_activ = d_activ.element_wise_mul(Matrix::apply_func(activ, activation == "relu" ? d_relu : d_sigmoid));
+		d_activ = d_activs.back();			// gradient of previous activation layer
+		weight = parameters.weights[i];		// 
+		input = inputs.back();				// 
+		layer = layers.back();				// 
 
-		// calculate derivative of weight
-		d_weight = d_activ * Matrix::transpose(input);
-		// calculate derivative of bias
+		d_activ = weight * d_activ;
+		d_activ = d_activ.element_wise_mul(Matrix::apply_func(layer, activation == "relu" ? d_relu : d_sigmoid));
+		d_weight = input * Matrix::transpose(d_activ);
 		d_bias = d_activ.sum(1);
-		// calculate derivative of activation
-		prev_d_activ = Matrix::transpose(weight) * d_activ;
 
+		d_activs.push_back(d_activ);
 		d_weights.push_back(d_weight);
 		d_biases.push_back(d_bias);
-		d_activs.push_back(prev_d_activ);
 	}
+
+
+	// version 1
+	// last layer of net
+	//Matrix weight = activs.back();
+	//Matrix activ;
+	//Matrix input;
+
+	//Matrix d_weight = d_activ * Matrix::transpose(weight);
+	//Matrix d_bias = d_activ.sum(1);
+	//Matrix prev_d_activ = Matrix::transpose(parameters.weights.back()) * d_activ;
+
+	//d_weights.push_back(d_weight);		// W(n)
+	//d_biases.push_back(d_bias);			// B(n)
+	//d_activs.push_back(prev_d_activ);	// A(n-1)
+
+	//// remaining layers in backward order
+	//for (int i = parameters.weights.size() - 2; i >= 0; --i)
+	//{
+	//	// layer-Z, activation-A
+	//	// note: non-derivative weight/layer and bias
+	//	input = inputs[i];
+	//	weight = parameters.weights[i];
+	//	activ = activs[i];
+
+	//	d_activ = d_activs.back();
+	//	d_activ = d_activ.element_wise_mul(Matrix::apply_func(activ, activation == "relu" ? d_relu : d_sigmoid));
+
+	//	// calculate derivative of weight
+	//	d_weight = d_activ * Matrix::transpose(input);
+	//	// calculate derivative of bias
+	//	d_bias = d_activ.sum(1);
+	//	// calculate derivative of activation
+	//	prev_d_activ = Matrix::transpose(weight) * d_activ;
+
+	//	d_weights.push_back(d_weight);
+	//	d_biases.push_back(d_bias);
+	//	d_activs.push_back(prev_d_activ);
+	//}
 
 	return net_result(d_activs, d_weights, d_biases);
 }
@@ -241,9 +336,11 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 
 	std::cout << "Training started!\n";
 	int64_t time = getTickcount();
+	int64_t e_time = getTickcount();
 	for (int epoch = 1; epoch <= epochs; epoch++)
 	{
-		int64_t e_time = getTickcount();
+		printf("\rEpoch %d/%d (%f s/it): ", epoch, epochs, (getTickcount() - e_time) / 1000.0 );
+		e_time = getTickcount();
 		std::vector<double> batch_losses;
 
 		Matrix::shuffle(X, y);
@@ -270,10 +367,10 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 		}
 
 		epoch_losses.push_back(std::accumulate(batch_losses.begin(), batch_losses.end(), .0) / batch_losses.size());
-		if (epoch % 50 == 0)
+		if (epoch % 100 == 0)
 		{
 			double train_accuracy = eval(X, y);
-			printf("Epoch %d/%d: training loss: %f, training accuracy: %f, time taken: %f s\n", epoch, epochs, epoch_losses.back(), train_accuracy, (getTickcount() - e_time) / 1000.0);
+			printf("\rEpoch %d/%d: training loss: %f, training accuracy: %f\n", epoch, epochs, epoch_losses.back(), train_accuracy);
 
 			// check loss changes for the past number of epochs
 
@@ -284,8 +381,9 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 				break;
 			}
 		}
+		
 	}
-	printf("Training complete! Time taken: %f s\n", (getTickcount() - time) / 1000.0);
+	printf("Training complete! Total time taken: %f s\n", (getTickcount() - time) / 1000.0);
 }
 
 Matrix NeuralNet::predict(const Matrix& X_in)
@@ -345,6 +443,40 @@ double NeuralNet::eval(const Matrix& X_in, const Matrix& y_in)
 		acc.push_back(y_pred.m_data[i] == y.m_data[i] ? 1 : 0);
 	return std::accumulate(acc.begin(), acc.end(), .0) / acc.size();
 }
+
+void NeuralNet::simple_test()
+{
+	// X co 50 hang, 16 features
+	Matrix X(16, 50);
+	// y co 50 hang, 26 output
+	Matrix y(26, 50);
+
+	/*X.randomize(-1,1);
+	y.randomize(1, 2);*/
+
+	X.load_data_txt(16, 50, R"(../data/test_nn/x.txt)");
+	y.load_data_txt(26, 50, R"(../data/test_nn/y.txt)");
+
+	/*X.transpose();
+	y.transpose();*/
+
+	for (int i = 0; i < parameters.weights.size(); i++)
+		parameters.weights[i].load_data_txt(parameters.weights[i].get_height(), parameters.weights[i].get_width(),
+			R"(../data/test_nn/W)" + std::to_string(i + 1) + ".txt");
+
+	// forward
+	net_result result = forward(X, true);
+
+	// calculate loss
+	double batch_loss = cross_entropy_loss(y, result.yhat).m_data[0];
+
+	// calculate gradients
+	result = backward(result, X, y);
+
+	// update gradients to model parameters
+	optimizer.step(parameters, result);
+}
+
 void NeuralNet::test()
 {
 	// X co 50 hang, 16 features
@@ -358,17 +490,51 @@ void NeuralNet::test()
 	X.load_data_txt(16, 50, R"(../data/test_nn/x.txt)");
 	y.load_data_txt(26, 50, R"(../data/test_nn/y.txt)");
 
+	X.transpose();
+	y.transpose();
+
 	for (int i = 0; i < parameters.weights.size(); i++)
 		parameters.weights[i].load_data_txt(parameters.weights[i].get_height(), parameters.weights[i].get_width(), 
 			R"(../data/test_nn/W)" + std::to_string(i+1) + ".txt");
 
-	for (int i = 0; i < 10; i++)
+	double N = X.get_width();
+	std::vector<double> epoch_losses;
+	int64_t time = getTickcount();
+	for (int i = 0; i < 10000; i++)
 	{
-		net_result result = forward(X, true);
+		printf("\rEpoch %d/%d: ", i, 10000);
+		Matrix::shuffle(X, y);
+		std::vector<double> batch_losses;
+		int64_t e_time = getTickcount();
+		for (int q = 0; q < N; q += batch_size)
+		{
+			printf(".");
+			Matrix X_batch = X.extract(q, q + batch_size - 1, 0);
+			Matrix y_batch = y.extract(q, q + batch_size - 1, 0);
 
-		result = backward(result, X, y);
+			X_batch.transpose();
+			y_batch.transpose();
 
-		optimizer.step(parameters, result);
+			// forward
+			net_result result = forward(X_batch, true);
+
+			// calculate loss
+			double batch_loss = cross_entropy_loss(y_batch, result.yhat).m_data[0];
+			batch_losses.push_back(batch_loss);
+
+			// calculate gradients
+			result = backward(result, X_batch, y_batch);
+
+			// update gradients to model parameters
+			optimizer.step(parameters, result);
+		}
+
+		epoch_losses.push_back(std::accumulate(batch_losses.begin(), batch_losses.end(), .0) / batch_losses.size());
+		if (i % 1000 == 0)
+		{
+			double train_accuracy = eval(X, y);
+			printf("Epoch %d/%d: training loss: %f, training accuracy: %f, time taken: %f s\n", i, epochs, epoch_losses.back(), train_accuracy, (getTickcount() - e_time) / 1000.0);
+		}
 	}
 	return;
 }

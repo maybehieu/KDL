@@ -54,6 +54,7 @@ class Optimizer
 {
 	std::string name;
 	double learning_rate;
+	double batch_size = 50;
 
 	// adam
 	int cnt;
@@ -73,11 +74,11 @@ public:
 	Optimizer() = default;
 
 	// sgd
-	Optimizer(double lr);
+	Optimizer(double lr, double batch_size);
 
 	// adam
 	Optimizer(const std::vector<Matrix>& weights, const std::vector<Matrix>& biases, 
-		const double& lr, const double& b1, const double& b2, const double& e );
+		const double& lr, const double& batch_sz, const double& b1, const double& b2, const double& e );
 
 	void step(parameters& params, const net_result& grads);
 };
@@ -113,9 +114,17 @@ public:
 	net_result forward(const Matrix& inputs, bool activated);
 	net_result backward(const net_result& datas, const Matrix& X, const Matrix& y);
 
+	Matrix layer_forward();
+	Matrix layer_backward();
+
+	Matrix activation_forward();
+	Matrix activation_backward();
+
+
 	void print_eval(const Matrix& X, const Matrix& y);
 	double eval(const Matrix& X, const Matrix& y);
 	void test();
+	void simple_test();
 
 	void load_model(const std::string& path);
 	void save_model(const std::string& path);

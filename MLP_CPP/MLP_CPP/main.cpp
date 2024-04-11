@@ -1,6 +1,7 @@
 #include "matrix.h"
 #include "mlp.h"
 #include "nn.h"
+#include "utils.h"
 
 void test_lib()
 {
@@ -138,9 +139,29 @@ void test_lib()
     std::cout << a.argmax(0);
 }
 
+void test_grad()
+{
+    //// error with normalization
+    //Matrix X;
+    //X.load_data_txt(2, 2, "../data/test/X.txt");
+    //Matrix y;
+    //y.load_data_txt(3, 2, "../data/test/Y.txt");
+    //Matrix W;
+    //W.load_data_txt(2, 3, "../data/test/W.txt");
+
+    //// grad
+    //Matrix A = softmax(W.transpose() * X);
+    //Matrix E = A - y;
+    //Matrix grad = X * Matrix::transpose(E);
+    Matrix ss;
+    ss.load_data_txt(3, 2, "../data/test/grad_test.txt");
+    Matrix sm = softmax(ss);
+    return;
+}
+
 void test_mlp()
 {
-    MLP mlp(16, 100, 26, .1, 5000, 1000, "relu");
+    MLP mlp(16, 100, 26, .1, 5000, 500, "relu");
     //mlp.test();
     Matrix X_train, y_train, X_test, y_test;
     X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
@@ -157,8 +178,11 @@ void test_mlp()
 
 void test_nn()
 {
-    NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, 0.0007, 10000, 100, "relu", "adam");
-    //net.test();
+    NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, 0.01, 10000, 500, "relu", "sgd");
+
+    net.simple_test();
+
+	//net.test();
 
     Matrix X_train, y_train, X_test, y_test;
     X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
@@ -175,6 +199,7 @@ int main()
 {
     //test_lib();
     //test_mlp();
+    //test_grad();
     test_nn();
 	return 0;
 }
