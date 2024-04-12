@@ -25,7 +25,7 @@ public:
 
 	Matrix(size_t rows, size_t cols);
 	Matrix(size_t rows, size_t cols, double initValue);
-	Matrix(std::vector<double>& data, size_t rows, size_t cols);
+	Matrix(std::vector<double> data, size_t rows, size_t cols);
 	Matrix();
 	Matrix(const Matrix&);
 	Matrix(size_t elem_num);

@@ -12,7 +12,7 @@ Matrix::Matrix(size_t rows, size_t cols, double initValue) : m_cols(cols), m_row
 	m_shape = { rows, cols };
 }
 
-Matrix::Matrix(std::vector<double>& data, size_t rows, size_t cols) : m_cols(cols), m_rows(rows), m_data(data)
+Matrix::Matrix(std::vector<double> data, size_t rows, size_t cols) : m_cols(cols), m_rows(rows), m_data(data)
 {
 	m_shape = { rows, cols };
 }
@@ -159,9 +159,9 @@ std::ostream& operator <<(std::ostream& out, const Matrix& m) {
 		out << "[ ";
 		for (unsigned int j = 0; j < m.m_cols; j++)
 		{
-			out << m.m_data[i * m.m_cols + j] << " ";
+			out << m.m_data[i * m.m_cols + j] << ", ";
 		}
-		out << "]\n";
+		out << "],\n";
 	}
 	out << "]\n";
 	return out;
@@ -569,9 +569,11 @@ Matrix Matrix::extract(const int& index, const int& type)
 	if (type == 1)
 	{
 		Matrix result(m_rows, 1);
-		for (size_t i = 0; i < m_rows; ++i) {
-			result.m_data[i] = m_data[i * m_cols + index];
+		std::vector<double> data;
+		for (size_t i = 0; i < m_rows * m_cols; i+=m_cols) {
+			data.push_back(m_data[i]);
 		}
+		result.m_data = data;
 		return result;
 	}
 }
@@ -735,7 +737,7 @@ Matrix& Matrix::square()
 
 Matrix& Matrix::transpose()
 {
-	if (m_cols != 1 && m_rows != 1)
+	if (m_cols != 1 || m_rows != 1)
 	{
 		std::vector<double> transposeData(m_cols * m_rows);
 		for (size_t i = 0; i < m_rows; i++)
@@ -782,7 +784,7 @@ Matrix Matrix::square(const Matrix& matrix)
 Matrix Matrix::transpose(const Matrix& matrix)
 {
 	Matrix transposed(matrix.m_cols, matrix.m_rows);
-	if (matrix.m_cols != 1 && matrix.m_rows != 1)
+	if (matrix.m_cols != 1 || matrix.m_rows != 1)
 	{
 		for (size_t i = 0; i < matrix.m_rows; i++)
 			for (size_t j = 0; j < matrix.m_cols; j++)

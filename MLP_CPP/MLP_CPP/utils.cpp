@@ -37,6 +37,29 @@ Matrix softmax(const Matrix& matrix)
 	return Z;
 }
 
+Matrix grad_softmax(Matrix error, Matrix yhat)
+{
+	Matrix result(error);
+	for (size_t i = 0; i < error.get_height(); ++i)
+	{
+		// create diagonal matrix
+		int N = std::max(yhat.get_height(), yhat.get_width());
+		Matrix diag(N,N);
+		int index = 0;
+		// error here
+		for (int i = 0; i < yhat.m_data.size(); i++)
+		{
+			diag.m_data[i + index] = yhat.m_data[i];
+			index += N;
+		}
+		Matrix b = yhat * Matrix::transpose(yhat);
+		Matrix jacobian = diag - b;
+		Matrix r = jacobian * error.extract(i, 1);
+		std::copy_n(r.m_data.begin(), r.m_data.size(), result.m_data.begin() + i * result.get_height());
+	}
+	return result;
+}
+
 Matrix cross_entropy_loss(const Matrix& y, const Matrix& yhat)
 {
 	Matrix log_m = Matrix::apply_func(yhat, [](double x) {return std::log(x); });
@@ -50,14 +73,17 @@ Matrix grad_cross_entropy_loss(const Matrix& y, const Matrix& yhat)
 	return yhat - y / yhat.get_width();
 }
 
-Matrix mse_loss(const Matrix& y, const Matrix& yhat)
+double mse_loss(const Matrix& y, const Matrix& yhat)
 {
-	
+	Matrix loss = Matrix::power(y - yhat, 2);
+	return std::accumulate(loss.m_data.begin(), loss.m_data.end(), 0.0) / loss.m_data.size();
 }
 
 Matrix grad_mse_loss(const Matrix& y, const Matrix& yhat)
 {
-	
+	Matrix result = yhat - y;
+	result = 2.0 * result;
+	return result / yhat.m_data.size();
 }
 
 void save_parameters_to_file(const parameters& params, const std::string& directory)

@@ -95,19 +95,21 @@ class NeuralNet
 	// epochs
 	int epochs;
 	int batch_size;
-	// activation
+	// activation for FC
 	std::string activation;
+	// loss function
+	std::string loss_fn;
 	// optimizer
 	Optimizer optimizer;
 
 public:
 	// use default size 100 for every hidden layer
 	NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layers, 
-		double lr, int epoch, int batch_size, std::string activation, std::string optimizer);
+		double lr, int epoch, int batch_size, std::string activation, std::string loss, std::string optimizer);
 
 	// vector contains size for input, each hidden layer, output / model topology
 	NeuralNet(std::vector<int> detailed_layers, 
-		double lr, int epoch, int batch_size, std::string activation, std::string optimizer);
+		double lr, int epoch, int batch_size, std::string activation, std::string loss, std::string optimizer);
 
 	void fit(const Matrix& X, const Matrix& y);
 	Matrix predict(const Matrix& X);

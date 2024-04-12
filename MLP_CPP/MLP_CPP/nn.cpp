@@ -38,8 +38,8 @@ void Optimizer::sgd_step(parameters& params, const net_result& grads)
 	net_result g(grads);
 	int N = params.weights.size();
 
-	std::for_each(g.grad_weights.begin(), g.grad_weights.end(), [this](Matrix& m) {return m / batch_size; });
-	std::for_each(g.grad_biases.begin(), g.grad_biases.end(), [this](Matrix& m) {return m / batch_size; });
+	/*std::for_each(g.grad_weights.begin(), g.grad_weights.end(), [this](Matrix& m) {return m / batch_size; });
+	std::for_each(g.grad_biases.begin(), g.grad_biases.end(), [this](Matrix& m) {return m / batch_size; });*/
 
 	for (int i = 0; i < N; i++)
 	{
@@ -87,7 +87,7 @@ void Optimizer::step(parameters& params, const net_result& grads)
 		sgd_step(params, grads);
 }
 
-NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layers, double lr, int epoch, int batch_size, std::string activation, std::string optimizer)
+NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layers, double lr, int epoch, int batch_size, std::string activation, std::string loss, std::string optimizer)
 {
 	// version 2
 	// create weight matrices
@@ -120,6 +120,7 @@ NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layer
 	epochs = epoch;
 	this->batch_size = batch_size;
 	this->activation = activation;
+	this->loss_fn = loss;
 
 	this->optimizer = Optimizer(eta, this->batch_size);
 	if (optimizer == "adam")
@@ -128,7 +129,7 @@ NeuralNet::NeuralNet(size_t in_channel, size_t out_channel, int num_hidden_layer
 	}
 }
 
-NeuralNet::NeuralNet(std::vector<int> detailed_layers, double lr, int epoch, int batch_size, std::string activation, std::string optimizer)
+NeuralNet::NeuralNet(std::vector<int> detailed_layers, double lr, int epoch, int batch_size, std::string activation, std::string loss, std::string optimizer)
 {
 	// version 2
 	for (int i = 0; i < detailed_layers.size() - 1; i++)
@@ -158,6 +159,7 @@ NeuralNet::NeuralNet(std::vector<int> detailed_layers, double lr, int epoch, int
 	this->batch_size = batch_size;
 	this->activation = activation;
 	this->optimizer = Optimizer(eta, this->batch_size);
+	this->loss_fn = loss;
 	if (optimizer == "adam")
 	{
 		this->optimizer = Optimizer(parameters.weights, parameters.biases, eta, this->batch_size);
@@ -205,7 +207,7 @@ net_result NeuralNet::forward(const Matrix& X, bool activate_last)
 
 	inputs.push_back(input);
 	layers.push_back(layer);
-	//activations.push_back(yhat);
+	activations.push_back(yhat);
 
 	// version 1
 	//// forward through each 'hidden layer'
@@ -249,7 +251,15 @@ net_result NeuralNet::backward(const net_result& datas, const Matrix& X, const M
 	std::vector<Matrix> d_biases;
 
 	// error with normalization
-	Matrix d_activ = (yhat - y) / y.get_width();
+	Matrix error;
+	if (loss_fn == "cross_entropy")
+	{
+		error = grad_cross_entropy_loss(y, yhat);
+	}
+	else if (loss_fn == "mse")
+	{
+		error = grad_mse_loss(y, yhat);
+	}
 
 	// version 2
 	Matrix weight;
@@ -257,10 +267,14 @@ net_result NeuralNet::backward(const net_result& datas, const Matrix& X, const M
 	Matrix input;
 	Matrix layer;
 
-	Matrix d_weight = inputs.back() * Matrix::transpose(d_activ);		// gradient of softmax
-	Matrix d_bias = d_activ.sum(1);
+	// double check this part
 
-	d_activs.push_back(d_activ);
+	Matrix d_activ = grad_softmax(error, yhat);										// gradient of softmax
+	Matrix grad_loss = Matrix::element_wise_mul(d_activ, error);		// gradient of the loss function respect to the output of softmax
+	Matrix d_weight = inputs.back() * Matrix::transpose(grad_loss);				// gradient of the weight
+	Matrix d_bias = error.sum(1);												// gradient of the bias
+
+	d_activs.push_back(error);
 	d_weights.push_back(d_weight);
 	d_biases.push_back(d_bias);
 
@@ -356,8 +370,16 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 			net_result result = forward(X_batch, true);
 
 			// calculate loss
-			double batch_loss = cross_entropy_loss(y_batch, result.yhat).m_data[0];
-			batch_losses.push_back(batch_loss);
+			if (loss_fn == "cross_entropy")
+			{
+				double batch_loss = cross_entropy_loss(y_batch, result.yhat).m_data[0];
+				batch_losses.push_back(batch_loss);
+			}
+			else if (loss_fn == "mse")
+			{
+				double batch_loss = mse_loss(y_batch, result.yhat);
+				batch_losses.push_back(batch_loss);
+			}
 
 			// calculate gradients
 			result = backward(result, X_batch, y_batch);
@@ -454,27 +476,43 @@ void NeuralNet::simple_test()
 	/*X.randomize(-1,1);
 	y.randomize(1, 2);*/
 
-	X.load_data_txt(16, 50, R"(../data/test_nn/x.txt)");
-	y.load_data_txt(26, 50, R"(../data/test_nn/y.txt)");
+	X.load_data_txt(16000, 16, R"(../data/test_nn/x.txt)");
+	y.load_data_txt(16000, 26, R"(../data/test_nn/y.txt)");
 
-	/*X.transpose();
-	y.transpose();*/
+	X.transpose();
+	y.transpose();
 
 	for (int i = 0; i < parameters.weights.size(); i++)
 		parameters.weights[i].load_data_txt(parameters.weights[i].get_height(), parameters.weights[i].get_width(),
 			R"(../data/test_nn/W)" + std::to_string(i + 1) + ".txt");
 
-	// forward
-	net_result result = forward(X, true);
+	for (int i = 0; i < X.get_width(); i++)
+	{
+		Matrix _x = X.extract(i, i+1, 1);
+		Matrix _y = y.extract(i, i+1, 1);
+		// forward
+		net_result result = forward(_x, true);
 
-	// calculate loss
-	double batch_loss = cross_entropy_loss(y, result.yhat).m_data[0];
+		// calculate loss
+		double loss;
+		if (loss_fn == "cross_entropy")
+		{
+			loss = cross_entropy_loss(_y, result.yhat).m_data[0];
+		}
+		else if (loss_fn == "mse")
+		{
+			loss = mse_loss(_y, result.yhat);
+		}
+		std::cout << loss << "\n";
+		// calculate gradients
+		result = backward(result, _x, _y);
 
-	// calculate gradients
-	result = backward(result, X, y);
+		// update gradients to model parameters
+		optimizer.step(parameters, result);
 
-	// update gradients to model parameters
-	optimizer.step(parameters, result);
+		double train_accuracy = eval(_x.transpose(), _y.transpose());
+		std::cout << train_accuracy << "\n";
+	}
 }
 
 void NeuralNet::test()
@@ -519,8 +557,16 @@ void NeuralNet::test()
 			net_result result = forward(X_batch, true);
 
 			// calculate loss
-			double batch_loss = cross_entropy_loss(y_batch, result.yhat).m_data[0];
-			batch_losses.push_back(batch_loss);
+			if (loss_fn == "cross_entropy")
+			{
+				double batch_loss = cross_entropy_loss(y_batch, result.yhat).m_data[0];
+				batch_losses.push_back(batch_loss);
+			}
+			else if (loss_fn == "mse")
+			{
+				double batch_loss = mse_loss(y_batch, result.yhat);
+				batch_losses.push_back(batch_loss);
+			}
 
 			// calculate gradients
 			result = backward(result, X_batch, y_batch);
