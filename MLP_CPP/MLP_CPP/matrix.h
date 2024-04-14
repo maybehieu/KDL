@@ -39,9 +39,12 @@ public:
 	// data
 	Matrix& load_data_txt(const size_t rows, const size_t cols, const std::string& s);
 	Matrix& load_data_csv(const size_t rows, const size_t cols, const std::string& file, const bool isHeader = true);
-	Matrix& load_data(const std::string& file);
 
+	Matrix& load_data(const std::string& file);
 	void save_data(const std::string& file);
+
+	Matrix& load_data(std::ifstream& inFile);
+	void save_data(std::ofstream& outFile);
 
 	bool check_dims(const Matrix& other) const;
 	Matrix clone()
@@ -50,7 +53,8 @@ public:
 		for (auto z : m_data) data.push_back(z);
 		return Matrix(data, m_rows, m_cols);
 	}
-	void randomize(double min, double max, double scalar = 1.0);
+	// randomize with normal-distribution using mean and standard deviation
+	void randomize(double mean, double stddev, double scalar = 1.0);
 	void soft_reset();
 	Matrix& drop(const int& index, const int& type);
 	Matrix extract(const int& index, const int& type);

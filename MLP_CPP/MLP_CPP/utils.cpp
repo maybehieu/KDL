@@ -40,22 +40,25 @@ Matrix softmax(const Matrix& matrix)
 Matrix grad_softmax(Matrix error, Matrix yhat)
 {
 	Matrix result(error);
-	for (size_t i = 0; i < error.get_height(); ++i)
+	for (size_t i = 0; i < error.get_width(); ++i)
 	{
+		// extract yhat from batch
+		Matrix y = yhat.extract(i, 1);
 		// create diagonal matrix
-		int N = std::max(yhat.get_height(), yhat.get_width());
+		int N = std::max(y.get_height(), y.get_width());
 		Matrix diag(N,N);
 		int index = 0;
 		// error here
-		for (int i = 0; i < yhat.m_data.size(); i++)
+		for (int i = 0; i < y.m_data.size(); i++)
 		{
-			diag.m_data[i + index] = yhat.m_data[i];
+			diag.m_data[i + index] = y.m_data[i];
 			index += N;
 		}
-		Matrix b = yhat * Matrix::transpose(yhat);
+		Matrix b = y * Matrix::transpose(y);
 		Matrix jacobian = diag - b;
 		Matrix r = jacobian * error.extract(i, 1);
-		std::copy_n(r.m_data.begin(), r.m_data.size(), result.m_data.begin() + i * result.get_height());
+		for (size_t j = 0; j < r.get_height(); j++)
+			result(j, i) = r(j, 0);
 	}
 	return result;
 }
@@ -76,17 +79,52 @@ Matrix grad_cross_entropy_loss(const Matrix& y, const Matrix& yhat)
 double mse_loss(const Matrix& y, const Matrix& yhat)
 {
 	Matrix loss = Matrix::power(y - yhat, 2);
-	return std::accumulate(loss.m_data.begin(), loss.m_data.end(), 0.0) / loss.m_data.size();
+	return std::accumulate(loss.m_data.begin(), loss.m_data.end(), 0.0) / yhat.m_data.size();
 }
 
 Matrix grad_mse_loss(const Matrix& y, const Matrix& yhat)
 {
 	Matrix result = yhat - y;
 	result = 2.0 * result;
-	return result / yhat.m_data.size();
+	return result / result.get_height();
 }
 
-void save_parameters_to_file(const parameters& params, const std::string& directory)
+void save_model_to_file(parameters& params, const std::string& filepath)
 {
-	
+	std::ofstream outFile;
+	outFile.open(filepath, std::ios::binary);
+	for (int i = 0; i < params.weights.size(); i++)
+		params.weights[i].save_data(outFile);
+	for (int i = 0; i < params.biases.size(); i++)
+		params.biases[i].save_data(outFile);
+}
+
+void load_model_from_file(parameters& params, const std::string& filepath)
+{
+	std::ifstream inFile;
+	inFile.open(filepath, std::ios::in | std::ios::binary);
+	for (int i = 0; i < params.weights.size(); i++)
+		params.weights[i].load_data(inFile);
+	for (int i = 0; i < params.biases.size(); i++)
+		params.biases[i].load_data(inFile);
+}
+
+void save_snapshot_to_file(const parameters& params, const net_result& net_output, const std::string& directory)
+{
+	std::ofstream outFile;
+	for (int i = 0; i < params.weights.size(); i++)
+	{
+		std::string filename = "W" + std::to_string(i + 1) + ".txt";
+		outFile.open(directory + filename, std::ios::binary);
+		outFile.write((char*)&params.weights[i].m_data[0], sizeof(double) * params.weights[i].get_width() * params.weights[i].get_height());
+	}
+	for (int i = 0; i < params.biases.size(); i++)
+	{
+		std::string filename = "B" + std::to_string(i + 1) + ".txt";
+		outFile.open(directory + filename, std::ios::binary);
+		outFile.write((char*)&params.biases[i].m_data[0], sizeof(double) * params.biases[i].get_width() * params.biases[i].get_height());
+	}
+	std::string filename = "net_output(yhat).txt";
+	outFile.open(directory + filename, std::ios::binary);
+	outFile.write((char*)&net_output.yhat.m_data[0], sizeof(double) * net_output.yhat.get_width() * net_output.yhat.get_height());
 }

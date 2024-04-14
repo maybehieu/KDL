@@ -123,11 +123,11 @@ void test_lib()
     //std::cout << "loss: " << (0. - sum) / matrix.get_width();
 
     //
-	Matrix a(5, 3);
+	/*Matrix a(5, 3);
     a.randomize(0, 1);
     Matrix b(5, 2);
     b.randomize(0, 1);
-    std::cout << a << b;
+    std::cout << a << b;*/
     //Matrix::shuffle(a, b);
     /*std::cout << a << b;
 
@@ -136,7 +136,11 @@ void test_lib()
     std::cout << b;
     std::cout << a.extract(1, 2, 1);*/
 
-    std::cout << a.argmax(0);
+    //std::cout << a.argmax(0);
+
+	Matrix a(2, 5);
+	a.randomize(0, 1, .01);
+    std::cout << a;
 }
 
 void test_grad()
@@ -178,13 +182,13 @@ void test_mlp()
 
 void test_nn()
 {
-    NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, 0.0007, 10000, 500, "relu", "mse", "sgd");
+    NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, .001, 500, 1000, "relu", "mse", "sgd", "weight");
 
-    net.simple_test();
+    //net.simple_test();
 
 	//net.test();
 
-    /*Matrix X_train, y_train, X_test, y_test;
+    Matrix X_train, y_train, X_test, y_test;
     X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
     y_train.load_data_txt(16000, 26, R"(../data/writing/y_train.txt)");
     X_test.load_data_txt(4000, 16, R"(../data/writing/X_test.txt)");
@@ -192,7 +196,7 @@ void test_nn()
 
     net.fit(X_train, y_train);
 
-    net.print_eval(X_test, y_test);*/
+    net.print_eval(X_test, y_test);
 }
 
 int main()

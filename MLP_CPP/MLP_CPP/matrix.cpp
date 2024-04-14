@@ -469,11 +469,33 @@ Matrix& Matrix::load_data(const std::string& file)
 	return *this;
 }
 
+Matrix& Matrix::load_data(std::ifstream& inFile)
+{
+	unsigned int rows, columns;
+	inFile.read((char*)&rows, sizeof(rows));
+	inFile.read((char*)&columns, sizeof(columns));
+	m_rows = rows, m_cols = columns;
+	double* m = new double[rows * columns];
+	inFile.read((char*)m, sizeof(double) * rows * columns);
+	std::vector<double> mat(m, m + rows * columns);
+	m_data = std::move(mat);
+	delete[] m;
+
+	return *this;
+}
+
 void Matrix::save_data(const std::string& file)
 {
 	std::ofstream outFile;
 	outFile.open(file, std::ios::binary);
 
+	outFile.write((char*)(&m_rows), sizeof(m_rows));
+	outFile.write((char*)(&m_cols), sizeof(m_cols));
+	outFile.write((char*)&m_data[0], sizeof(double) * m_rows * m_cols);
+}
+
+void Matrix::save_data(std::ofstream& outFile)
+{
 	outFile.write((char*)(&m_rows), sizeof(m_rows));
 	outFile.write((char*)(&m_cols), sizeof(m_cols));
 	outFile.write((char*)&m_data[0], sizeof(double) * m_rows * m_cols);
@@ -569,11 +591,14 @@ Matrix Matrix::extract(const int& index, const int& type)
 	if (type == 1)
 	{
 		Matrix result(m_rows, 1);
-		std::vector<double> data;
-		for (size_t i = 0; i < m_rows * m_cols; i+=m_cols) {
+		/*std::vector<double> data;
+		for (size_t i = 0; i < m_rows * m_cols; i+=index) {
 			data.push_back(m_data[i]);
 		}
-		result.m_data = data;
+		result.m_data = data;*/
+		for (size_t i = 0; i < m_rows; ++i) {
+			result.m_data[i] = m_data[i * m_cols + index];
+		}
 		return result;
 	}
 }
@@ -646,11 +671,11 @@ Matrix Matrix::argmax(const int& type)
 	}
 }
 
-void Matrix::randomize(double min, double max, double scalar)
+void Matrix::randomize(double mean, double stddev, double scalar)
 {
 	std::random_device rand;
 	std::mt19937 engine(rand());
-	std::uniform_real_distribution<double> valueDistribution(min, max);
+	std::normal_distribution<double> valueDistribution(mean, stddev);
 	for (size_t i = 0; i < m_rows * m_cols; i++)
 		m_data[i] = valueDistribution(engine) * scalar;
 }

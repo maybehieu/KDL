@@ -22,4 +22,8 @@ double mse_loss(const Matrix& y, const Matrix& yhat);
 Matrix grad_mse_loss(const Matrix& y, const Matrix& yhat);
 
 // debugging
-void save_parameters_to_file(const parameters& params, const std::string& directory);
+void save_snapshot_to_file(const parameters& params, const net_result& net_output, const std::string& directory);
+
+// model utils
+void save_model_to_file(parameters& params, const std::string& filePath);
+void load_model_from_file(parameters& params, const std::string& filepath);
