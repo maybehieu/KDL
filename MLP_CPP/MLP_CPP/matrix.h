@@ -35,6 +35,8 @@ public:
 	inline size_t get_width() const { return m_cols; }
 	inline size_t get_height() const { return m_rows; }
 	inline void print_shape() { std::cout << "{ " << m_rows << ", " << m_cols << " }\n"; }
+	inline void change_width(int n) { m_cols += n; }
+	inline void change_height(int n) { m_rows += n; }
 
 	// data
 	Matrix& load_data_txt(const size_t rows, const size_t cols, const std::string& s);
@@ -59,6 +61,8 @@ public:
 	Matrix& drop(const int& index, const int& type);
 	Matrix extract(const int& index, const int& type);
 	Matrix extract(const int& start_index, const int& end_index, const int& type);
+	Matrix& concat(const Matrix& other, const int& index, const int& type);
+	Matrix& concat(const Matrix& other, const int& start_index, const int& end_index, const int& type);
 	Matrix argmax(const int& type);
 
 	Matrix& element_wise_mul(const Matrix& other);

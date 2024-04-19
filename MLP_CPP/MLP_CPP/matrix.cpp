@@ -635,6 +635,69 @@ Matrix Matrix::extract(const int& start, const int& end, const int& type)
 	}
 }
 
+Matrix& Matrix::concat(const Matrix& other, const int& index, const int& type)
+{
+	// type: 0-row, 1-col
+	if (type == 0) {
+#ifdef _DEBUG
+		// Check if the number of columns matches
+		if (m_cols != other.m_cols) {
+			throw MatrixError("Number of columns must match for row concatenation.");
+		}
+#endif
+		// Insert the row at the specified index
+		m_data.insert(m_data.end(), other.m_data.begin() + index * other.m_cols, other.m_data.begin() + (index + 1) * other.m_cols);
+		m_rows++;
+	}
+	else {
+#ifdef _DEBUG
+		// Check if the number of rows matches
+		if (m_rows != other.m_rows) {
+			throw MatrixError("Number of rows must match for column concatenation.");
+		}
+#endif
+		// Insert the column at the specified index
+		for (size_t i = 0; i < m_rows; ++i) {
+			m_data.push_back(other.m_data[i * other.m_cols + index]);
+		}
+		m_cols++;
+	}
+	return *this;
+}
+
+Matrix& Matrix::concat(const Matrix& other, const int& start_index, const int& end_index, const int& type)
+{
+	if (type == 0) {
+#ifdef _DEBUG
+		// Check if the number of columns matches
+		if (m_cols != other.m_cols) {
+			throw MatrixError("Number of columns must match for row concatenation.");
+		}
+#endif
+		// Insert the range of rows at the end of the current matrix
+		for (size_t i = start_index; i <= end_index; ++i) {
+			m_data.insert(m_data.end(), other.m_data.begin() + i * other.m_cols, other.m_data.begin() + (i + 1) * other.m_cols);
+		}
+		m_rows += (end_index - start_index + 1);
+	}
+	else {
+#ifdef _DEBUG
+		// Check if the number of rows matches
+		if (m_rows != other.m_rows) {
+			throw MatrixError("Number of rows must match for column concatenation.");
+		}
+#endif
+		// Insert the range of columns at the end of the current matrix
+		for (size_t i = 0; i < m_rows; ++i) {
+			for (size_t j = start_index; j <= end_index; ++j) {
+				m_data.push_back(other.m_data[i * other.m_cols + j]);
+			}
+		}
+		m_cols += (end_index - start_index + 1);
+	}
+	return *this;
+}
+
 Matrix Matrix::argmax(const int& type)
 {
 	if (type == 0) 

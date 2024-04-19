@@ -27,3 +27,5 @@ void save_snapshot_to_file(const parameters& params, const net_result& net_outpu
 // model utils
 void save_model_to_file(parameters& params, const std::string& filePath);
 void load_model_from_file(parameters& params, const std::string& filepath);
+void save_svm_to_file(Matrix weight, double bias, const std::string& filepath);
+void load_svm_from_file(Matrix& weight, double& bias, const std::string& filepath);

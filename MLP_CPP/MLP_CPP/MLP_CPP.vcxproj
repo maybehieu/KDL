@@ -132,6 +132,7 @@
     <ClInclude Include="matrix.h" />
     <ClInclude Include="mlp.h" />
     <ClInclude Include="nn.h" />
+    <ClInclude Include="svm.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +140,7 @@
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="mlp.cpp" />
     <ClCompile Include="nn.cpp" />
+    <ClCompile Include="svm.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

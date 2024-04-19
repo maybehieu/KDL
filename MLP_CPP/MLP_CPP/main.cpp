@@ -1,6 +1,7 @@
 #include "matrix.h"
 #include "mlp.h"
 #include "nn.h"
+#include "svm.h"
 #include "utils.h"
 
 void test_lib()
@@ -138,9 +139,13 @@ void test_lib()
 
     //std::cout << a.argmax(0);
 
-	Matrix a(2, 5);
+	Matrix a(4, 5);
 	a.randomize(0, 1, .01);
     std::cout << a;
+    Matrix b(4, 1);
+    b.concat(a, 2, 3, 1);
+    std::cout << b;
+
 }
 
 void test_grad()
@@ -199,11 +204,45 @@ void test_nn()
     net.print_eval(X_test, y_test);
 }
 
+void test_svm()
+{
+    SoftMarginSVM svm(1.0, 0.001, 10, "mnist_01");
+    Matrix X_train, y_train, X_test, y_test;
+    std::cout << "Loading training data...";
+
+    X_train = Matrix(10, 5);
+    y_train = Matrix(10, 1);
+    X_test = Matrix(10, 5);
+    y_test = Matrix(10, 1);
+
+    X_train.randomize(0, 1);
+    y_train.randomize(0, 1);
+    X_test.randomize(0, 1);
+    y_test.randomize(0, 1);
+
+    X_train.load_data_txt(11824, 784, R"(../data/mnist_01/X_train.txt)");
+    y_train.load_data_txt(11824, 1, R"(../data/mnist_01/y_train.txt)");
+    X_test.load_data_txt(2956, 784, R"(../data/mnist_01/X_test.txt)");
+    y_test.load_data_txt(2956, 1, R"(../data/mnist_01/y_test.txt)");
+
+    // normalize data for mnist
+    std::for_each(X_train.m_data.begin(), X_train.m_data.end(), [](double& x) {return x / 255.0; });
+    std::for_each(y_train.m_data.begin(), y_train.m_data.end(), [](double& x) {return x / 255.0; });
+    std::for_each(X_test.m_data.begin(), X_test.m_data.end(), [](double& x) {return x / 255.0; });
+    std::for_each(y_test.m_data.begin(), y_test.m_data.end(), [](double& x) {return x / 255.0; });
+
+    std::cout << "\rFinished loading training data!\n";
+    svm.fit(X_train, y_train);
+
+    svm.print_eval(X_test, y_test);
+}
+
 int main()
 {
     //test_lib();
     //test_mlp();
     //test_grad();
-    test_nn();
+    //test_nn();
+    test_svm();
 	return 0;
 }

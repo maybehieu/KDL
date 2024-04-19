@@ -117,12 +117,6 @@ public:
 	net_result forward(const Matrix& inputs, bool activated);
 	net_result backward(const net_result& datas, const Matrix& X, const Matrix& y);
 
-	Matrix layer_forward();
-	Matrix layer_backward();
-
-	Matrix activation_forward();
-	Matrix activation_backward();
-
 
 	void print_eval(const Matrix& X, const Matrix& y);
 	double eval(const Matrix& X, const Matrix& y);

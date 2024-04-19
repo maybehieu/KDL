@@ -1,4 +1,6 @@
 #include "utils.h"
+
+#include <filesystem>
 #include <functional>
 
 #define GET_NAME(variable) (#variable)
@@ -91,6 +93,10 @@ Matrix grad_mse_loss(const Matrix& y, const Matrix& yhat)
 
 void save_model_to_file(parameters& params, const std::string& filepath)
 {
+	if (!std::filesystem::is_directory(std::filesystem::path(filepath).parent_path()))
+	{
+		std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
+	}
 	std::ofstream outFile;
 	outFile.open(filepath, std::ios::binary);
 	for (int i = 0; i < params.weights.size(); i++)
@@ -107,6 +113,38 @@ void load_model_from_file(parameters& params, const std::string& filepath)
 		params.weights[i].load_data(inFile);
 	for (int i = 0; i < params.biases.size(); i++)
 		params.biases[i].load_data(inFile);
+}
+
+void save_svm_to_file(Matrix weight, double bias, const std::string& filepath)
+{
+	if (!std::filesystem::is_directory(std::filesystem::path(filepath).parent_path()))
+	{
+		std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
+	}
+	std::ofstream outFile;
+	outFile.open(filepath, std::ios::binary);
+	size_t rows = weight.get_height();
+	size_t cols = weight.get_width();
+	outFile.write((char*)(&rows), sizeof(rows));
+	outFile.write((char*)(&cols), sizeof(cols));
+	outFile.write((char*) &weight.m_data[0], sizeof(double) * weight.get_height() * weight.get_width());
+
+	outFile.write((char*)(&bias), sizeof(bias));
+}
+
+void load_svm_from_file(Matrix& weight, double& bias, const std::string& filepath)
+{
+	std::ifstream inFile;
+	inFile.open(filepath, std::ios::in | std::ios::binary);
+	size_t rows, columns;
+	inFile.read((char*)&rows, sizeof(rows));
+	inFile.read((char*)&columns, sizeof(columns));
+	weight = Matrix(rows, columns);
+	double* m = new double[rows * columns];
+	inFile.read((char*)m, sizeof(double) * rows * columns);
+	std::vector<double> mat(m, m + rows * columns);
+	weight.m_data = std::move(mat);
+	delete[] m;
 }
 
 void save_snapshot_to_file(const parameters& params, const net_result& net_output, const std::string& directory)
