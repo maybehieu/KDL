@@ -35,11 +35,13 @@ public:
 	inline size_t get_width() const { return m_cols; }
 	inline size_t get_height() const { return m_rows; }
 	inline void print_shape() { std::cout << "{ " << m_rows << ", " << m_cols << " }\n"; }
+	inline void print_shape() const { std::cout << "{ " << m_rows << ", " << m_cols << " }\n"; }
 	inline void change_width(int n) { m_cols += n; }
 	inline void change_height(int n) { m_rows += n; }
 
 	// data
 	Matrix& load_data_txt(const size_t rows, const size_t cols, const std::string& s);
+	Matrix& load_data_txt(const std::string& s);
 	Matrix& load_data_csv(const size_t rows, const size_t cols, const std::string& file, const bool isHeader = true);
 
 	Matrix& load_data(const std::string& file);

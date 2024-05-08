@@ -409,6 +409,57 @@ Matrix& Matrix::load_data_txt(const size_t rows, const size_t cols, const std::s
 	return *this;
 }
 
+Matrix& Matrix::load_data_txt(const std::string& filepath)
+{
+	m_data = {};
+	std::vector<double> data = {};
+	std::ifstream file(filepath);
+	if (!file.is_open())
+	{
+		std::cout << "Failed to open file " + filepath << "\n";
+		return *this;
+	}
+	std::string line;
+	while (std::getline(file, line))
+	{
+		std::istringstream iss(line);
+		std::string temp;
+		char sep = ',';
+		// get shape first
+		try
+		{
+			std::getline(iss, temp, sep);
+			m_rows = std::stoi(temp);
+			std::getline(iss, temp, sep);
+			m_cols = std::stoi(temp);
+		}
+		catch (...)
+		{
+			std::cout << "Failed to parse rows and columns " << temp << "\n";
+			return *this;
+		}
+		while (std::getline(iss, temp, sep))
+		{
+			try
+			{
+				data.push_back(std::stod(temp));
+			}
+			catch (...)
+			{
+				std::cout << "Failed to parse " << temp << "\n";
+			}
+		}
+	}
+	m_data = std::move(data);
+#ifdef _DEBUG
+	if (m_data.size() != m_rows * m_cols)
+	{
+		throw MatrixError("Load data from string failed! Mismatch size!");
+	}
+#endif
+	return *this;
+}
+
 Matrix& Matrix::load_data_csv(const size_t rows, const size_t cols, const std::string& filepath, const bool header)
 {
 	m_rows = rows, m_cols = cols;

@@ -370,6 +370,9 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 			save_model_to_file(parameters, modelPath);
 		}
 	}
+	std::cout << "Saving losses to file...\n";
+	sprintf_s(path, "../losses/%s.loss", name.c_str());
+	save_vector_to_file(epoch_losses, path);
 	printf("Training complete! Total time taken: %f s\n", (getTickcount() - time) / 1000.0);
 }
 
@@ -380,7 +383,8 @@ Matrix NeuralNet::predict(const Matrix& X_in)
 
 	net_result result = forward(X, true);
 
-	return result.yhat.argmax(1);
+	//return result.yhat.argmax(1);
+	return result.yhat;
 }
 
 void NeuralNet::print_eval(const Matrix& X_in, const Matrix& y_in)
@@ -391,7 +395,7 @@ void NeuralNet::print_eval(const Matrix& X_in, const Matrix& y_in)
 
 	Matrix y_pred = predict(X);
 	y.transpose();
-	y = y.argmax(1);
+	//y = y.argmax(1);
 
 #ifdef _DEBUG
 	if (y_pred.m_data.size() != y.m_data.size())
@@ -405,6 +409,16 @@ void NeuralNet::print_eval(const Matrix& X_in, const Matrix& y_in)
 	for (size_t i = 0; i < y_pred.m_data.size(); i++)
 		acc.push_back(y_pred.m_data[i] == y.m_data[i] ? 1 : 0);
 	printf("Model accuracy: %f\n", std::accumulate(acc.begin(), acc.end(), .0) / acc.size());
+
+	// other metrics
+	double precision = get_precision(y_pred, y);
+	double recall = get_recall(y_pred, y);
+	double f1 = get_f1(y_pred, y);
+
+	printf("Model precision: %f, recall: %f, F1-score: %f\n", precision, recall, f1);
+
+	// save prediction for presentation/ plotting
+	save_vector_to_file(y_pred.m_data, "../prediction_results/" + this->name + ".txt");
 }
 
 double NeuralNet::eval(const Matrix& X_in, const Matrix& y_in)
@@ -415,7 +429,7 @@ double NeuralNet::eval(const Matrix& X_in, const Matrix& y_in)
 
 	Matrix y_pred = predict(X);
 	y.transpose();
-	y = y.argmax(1);
+	//y = y.argmax(1);
 
 #ifdef _DEBUG
 	if (y_pred.m_data.size() != y.m_data.size())

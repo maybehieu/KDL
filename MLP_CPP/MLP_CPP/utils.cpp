@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include <iostream>
 #include <filesystem>
 #include <functional>
 
@@ -166,3 +166,119 @@ void save_snapshot_to_file(const parameters& params, const net_result& net_outpu
 	outFile.open(directory + filename, std::ios::binary);
 	outFile.write((char*)&net_output.yhat.m_data[0], sizeof(double) * net_output.yhat.get_width() * net_output.yhat.get_height());
 }
+
+void save_vector_to_file(const std::vector<double>& vect, const std::string& filePath)
+{
+	if (!std::filesystem::is_directory(std::filesystem::path(filePath).parent_path()))
+	{
+		std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+	}
+	std::ofstream outFile;
+	outFile.open(filePath);
+	for (const auto& element : vect)
+	{
+		outFile << element << ", ";
+	}
+	outFile.close();
+}
+
+void save_vector_to_file(const std::vector<int>& vect, const std::string& filePath)
+{
+	std::ofstream outFile;
+	outFile.open(filePath);
+	for (const auto& element : vect)
+	{
+		outFile << element << " ";
+	}
+	outFile.close();
+}
+
+double get_precision(const Matrix& ypred, const Matrix& y)
+{
+	int TP = 0, FP = 0;
+	for (size_t i = 0; i < ypred.m_data.size(); ++i) {
+		if (ypred.m_data[i] == 1 && y.m_data[i] == 1) {
+			TP++;
+		}
+		else if (ypred.m_data[i] == 1 && y.m_data[i] == -1) {
+			FP++;
+		}
+	}
+	return static_cast<double>(TP) / (TP + FP);
+}
+
+double get_recall(const Matrix& ypred, const Matrix& y)
+{
+	int TP = 0, FN = 0;
+	for (size_t i = 0; i < ypred.m_data.size(); ++i) {
+		if (ypred.m_data[i] == 1 && y.m_data[i] == 1) {
+			TP++;
+		}
+		else if (ypred.m_data[i] == -1 && y.m_data[i] == 1) {
+			FN++;
+		}
+	}
+	return static_cast<double>(TP) / (TP + FN);
+}
+
+double get_f1(const Matrix& ypred, const Matrix& y)
+{
+	double precision = get_precision(ypred, y);
+	double recall = get_recall(ypred, y);
+	return 2 * (precision * recall) / (precision + recall);
+}
+
+//std::unordered_map<int, double> get_precision(Matrix ypred, Matrix y, std::vector<int> classes)
+//{
+//	std::unordered_map<int, double> precisionMap;
+//	std::unordered_map<int, int> truePositive, falsePositive;
+//
+//	for (size_t i = 0; i < ypred.m_data.size(); ++i) {
+//		if (ypred.m_data[i] == y.m_data[i]) {
+//			truePositive[y.m_data[i]]++;
+//		}
+//		else {
+//			falsePositive[y.m_data[i]]++;
+//		}
+//	}
+//
+//	for (const auto& classLabel : truePositive) {
+//		precisionMap[classLabel.first] = static_cast<double>(truePositive[classLabel.first]) / (truePositive[classLabel.first] + falsePositive[classLabel.first]);
+//	}
+//
+//	return precisionMap;
+//}
+//
+//std::unordered_map<int, double> get_recall(Matrix ypred, Matrix y, std::vector<int> classes)
+//{
+//	std::unordered_map<int, double> recallMap;
+//	std::unordered_map<int, int> truePositive, falseNegative;
+//
+//	for (size_t i = 0; i < ypred.m_data.size(); ++i) {
+//		if (ypred.m_data[i] == y.m_data[i]) {
+//			truePositive[y.m_data[i]]++;
+//		}
+//		else {
+//			falseNegative[y.m_data[i]]++;
+//		}
+//	}
+//
+//	for (const auto& classLabel : truePositive) {
+//		recallMap[classLabel.first] = static_cast<double>(truePositive[classLabel.first]) / (truePositive[classLabel.first] + falseNegative[classLabel.first]);
+//	}
+//
+//	return recallMap;
+//}
+//
+//std::unordered_map<int, double> get_f1(Matrix ypred, Matrix y, std::vector<int> classes)
+//{
+//	std::unordered_map<int, double> f1ScoreMap;
+//	std::unordered_map<int, double> precisionMap = get_precision(ypred, y, classes);
+//	std::unordered_map<int, double> recallMap = get_recall(ypred, y, classes);
+//
+//	for (const auto& classLabel : precisionMap) {
+//		f1ScoreMap[classLabel.first] = 2 * (precisionMap[classLabel.first] * recallMap[classLabel.first]) / (precisionMap[classLabel.first] + recallMap[classLabel.first]);
+//	}
+//
+//	return f1ScoreMap;
+//}

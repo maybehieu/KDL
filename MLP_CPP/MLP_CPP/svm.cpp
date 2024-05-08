@@ -85,6 +85,11 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 			save_svm_to_file(weight, bias, modelPath);
 		}
 	}
+
+	std::cout << "Saving losses to file...\n";
+	sprintf_s(path, "../losses/%s.loss", name.c_str());
+	save_vector_to_file(losses, path);
+	printf("Training complete! Total time taken: %f s\n", (getTickcount() - time) / 1000.0);
 }
 
 Matrix SoftMarginSVM::predict(const Matrix& x)
@@ -141,4 +146,15 @@ void SoftMarginSVM::print_eval(const Matrix& X_in, const Matrix& y_in)
 	for (size_t i = 0; i < y_pred.m_data.size(); i++)
 		acc.push_back(y_pred.m_data[i] - y.m_data[i] < std::numeric_limits<double>::epsilon() ? 1 : 0);
 	printf("SVM accuracy: %f\n", std::accumulate(acc.begin(), acc.end(), .0) / acc.size());
+
+	// convert -1 to 0 for sync (metrics evaluation)
+	std::for_each(y.m_data.begin(), y.m_data.end(), [](double& x){	if (x == -1) x = 0;	});
+	std::for_each(y_pred.m_data.begin(), y_pred.m_data.end(), [](double& x){ if (x == -1) x = 0; });
+
+	// other metrics
+	double precision = get_precision(y_pred, y);
+	double recall = get_recall(y_pred, y);
+	double f1 = get_f1(y_pred, y);
+
+	printf("SVM precision: %f, recall: %f, F1-score: %f\n", precision, recall, f1);
 }
