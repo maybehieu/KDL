@@ -180,13 +180,22 @@ std::vector<int> topo_str_to_vector(std::string s)
     return result;
 }
 
-void dataset_quick_load(Matrix& xtrain, Matrix& ytrain, Matrix& xtest, Matrix& ytest,
+void dataset_slow_load(Matrix& xtrain, Matrix& ytrain, Matrix& xtest, Matrix& ytest,
     const std::string& xtrain_path, const std::string& ytrain_path, const std::string& xtest_path, const std::string& ytest_path)
 {
     xtrain.load_data_txt(xtrain_path);
     ytrain.load_data_txt(ytrain_path);
     xtest.load_data_txt(xtest_path);
     ytest.load_data_txt(ytest_path);
+}
+
+void dataset_quick_load(Matrix& xtrain, Matrix& ytrain, Matrix& xtest, Matrix& ytest,
+    const std::string& xtrain_path, const std::string& ytrain_path, const std::string& xtest_path, const std::string& ytest_path)
+{
+    xtrain.load_data(xtrain_path);
+    ytrain.load_data(ytrain_path);
+    xtest.load_data(xtest_path);
+    ytest.load_data(ytest_path);
 }
 
 void preview_dataset(const Matrix& xtrain, const Matrix& ytrain, const Matrix& xtest, const Matrix& ytest)
@@ -217,7 +226,9 @@ void test_mlp()
 void test_nn()
 {
     //NeuralNet net(std::vector<int>{16, 100, 150, 100, 26}, .001, 500, 1000, "relu", "mse", "sgd", "weight");
-    NeuralNet net(std::vector<int>{22, 10, 20, 10, 1}, .001, 500, 50, "relu", "mse", "sgd", "mushroom");
+    //NeuralNet net(std::vector<int>{784, 100, 150, 100, 2}, .0001, 100, 1000, "relu", "mse", "sgd", "mnist_mse_sgd");
+    //NeuralNet net(std::vector<int>{4, 15, 2}, .0001, 100, 50, "relu", "mse", "sgd", "iris_mse_sgd");
+    NeuralNet net(std::vector<int>{22, 100, 150, 100, 2}, .0001, 100, 1000, "relu", "mse", "sgd", "mushroom_100_mse_sgd");
 
     //net.simple_test();
 
@@ -225,46 +236,83 @@ void test_nn()
 
     std::cout << "Loading dataset, this might take a while...\n";
     Matrix X_train, y_train, X_test, y_test;
-    dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtrain.txt", "F:/Documents/KDL/MLP_CPP\\data\\mushroom_ytrain.txt",
-        "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtest.txt", "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_ytest.txt");
+    // mnist
+    /*dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\mnist_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_ytest.bin");*/
+    // mushroom
+    dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\mushroom_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_ytest.bin");
+    // iris
+    /*dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\iris_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_ytest.bin");*/
+    /*X_train.load_data_txt(16000, 16, R"(../data/writing/X_train.txt)");
+    y_train.load_data_txt(16000, 26, R"(../data/writing/y_train.txt)");
+    X_test.load_data_txt(4000, 16, R"(../data/writing/X_test.txt)");
+    y_test.load_data_txt(4000, 26, R"(../data/writing/y_test.txt)");*/
     std::cout << "Load dataset complete!\n";
 
-    net.fit(X_train, y_train);
+    // load model
+    net.load_model("../weights/mushroom_100_mse_sgd.bin");
+
+    //net.fit(X_train, y_train);
 
     net.print_eval(X_test, y_test);
 }
 
 void test_svm()
 {
-    SoftMarginSVM svm(1.0, 0.001, 10, "mnist_01");
-    Matrix X_train, y_train, X_test, y_test;
+    SoftMarginSVM svm(1.0, 0.001, 100, "mushroom_001_1");
     std::cout << "Loading training data...";
 
-    X_train = Matrix(10, 5);
-    y_train = Matrix(10, 1);
-    X_test = Matrix(10, 5);
-    y_test = Matrix(10, 1);
+    Matrix X_train, y_train, X_test, y_test;
+    // mnist
+    /*dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\mnist_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_ytest.bin");*/
+        // mushroom
+    dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\mushroom_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\mushroom_ytest.bin");
+    // iris
+    /*dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\iris_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_ytest.bin");*/
 
-    X_train.randomize(0, 1);
-    y_train.randomize(0, 1);
-    X_test.randomize(0, 1);
-    y_test.randomize(0, 1);
-
-    X_train.load_data_txt(11824, 784, R"(../data/mnist_01/X_train.txt)");
-    y_train.load_data_txt(11824, 1, R"(../data/mnist_01/y_train.txt)");
-    X_test.load_data_txt(2956, 784, R"(../data/mnist_01/X_test.txt)");
-    y_test.load_data_txt(2956, 1, R"(../data/mnist_01/y_test.txt)");
-
-    // normalize data for mnist
-    std::for_each(X_train.m_data.begin(), X_train.m_data.end(), [](double& x) {return x / 255.0; });
-    std::for_each(y_train.m_data.begin(), y_train.m_data.end(), [](double& x) {return x / 255.0; });
-    std::for_each(X_test.m_data.begin(), X_test.m_data.end(), [](double& x) {return x / 255.0; });
-    std::for_each(y_test.m_data.begin(), y_test.m_data.end(), [](double& x) {return x / 255.0; });
+    // transform label from one-hot to single label for SVM
+    y_train = y_train.argmax(0);
+    y_test = y_test.argmax(0);
 
     std::cout << "\rFinished loading training data!\n";
+
+    // load model
+    //svm.load_model("");
+
     svm.fit(X_train, y_train);
 
     svm.print_eval(X_test, y_test);
+}
+
+void test_file()
+{
+    int64_t time = getTickcount();
+    std::cout << "Loading dataset, this might take a while...\n";
+    Matrix X_train, y_train, X_test, y_test;
+    dataset_slow_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtrain.txt", "F:/Documents/KDL/MLP_CPP\\data\\iris_ytrain.txt",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtest.txt", "F:\\Documents\\KDL\\MLP_CPP\\data\\iris_ytest.txt");
+    std::cout << "Load dataset complete!\n";
+    std::cout << "Time taken: " << (getTickcount() - time) / 1000. << "\n";
+    //// save to diff format
+    X_train.save_data("F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtrain.bin");
+    X_test.save_data("F:\\Documents\\KDL\\MLP_CPP\\data\\iris_xtest.bin");
+    y_train.save_data("F:\\Documents\\KDL\\MLP_CPP\\data\\iris_ytrain.bin");
+    y_test.save_data("F:\\Documents\\KDL\\MLP_CPP\\data\\iris_ytest.bin");
+    std::cout << "Export complete!\n";
+
+    /*int64_t time = getTickcount();
+    std::cout << "Loading dataset, this might take a while...\n";
+    Matrix X_train, y_train, X_test, y_test;
+    dataset_quick_load(X_train, y_train, X_test, y_test, "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtrain.bin", "F:/Documents/KDL/MLP_CPP\\data\\mnist_ytrain.bin",
+        "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_xtest.bin", "F:\\Documents\\KDL\\MLP_CPP\\data\\mnist_ytest.bin");
+    std::cout << "Load dataset complete!\n";
+    std::cout << "Time taken: " << (getTickcount() - time) / 1000. << "\n";
+    preview_dataset(X_train, y_train, X_test, y_test);*/
 }
 
 int main(int argc, char* argv[])
@@ -272,8 +320,9 @@ int main(int argc, char* argv[])
     //test_lib();
     //test_mlp();
     //test_grad();
-    //test_svm();
-    test_nn();
+    //test_file();
+    test_svm();
+    //test_nn();
     return 0;
     // helper
     if (argc < 2)
@@ -364,7 +413,7 @@ int main(int argc, char* argv[])
 
         std::cout << "Loading dataset, this might take a while...\n";
         Matrix X_train, y_train, X_test, y_test;
-        dataset_quick_load(X_train, y_train, X_test, y_test, xtrain_path, ytrain_path, xtest_path, ytest_path);
+        dataset_slow_load(X_train, y_train, X_test, y_test, xtrain_path, ytrain_path, xtest_path, ytest_path);
         std::cout << "Load dataset complete!\n";
 
         net.fit(X_train, y_train);
@@ -390,7 +439,7 @@ int main(int argc, char* argv[])
 
         std::cout << "Loading dataset, this might take a while...\n";
         Matrix X_train, y_train, X_test, y_test;
-        dataset_quick_load(X_train, y_train, X_test, y_test, xtrain_path, ytrain_path, xtest_path, ytest_path);
+        dataset_slow_load(X_train, y_train, X_test, y_test, xtrain_path, ytrain_path, xtest_path, ytest_path);
         std::cout << "Load dataset complete!\n";
 
         svm.fit(X_train, y_train);

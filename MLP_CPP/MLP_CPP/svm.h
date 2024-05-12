@@ -19,4 +19,7 @@ public:
 	Matrix predict(const Matrix& x);
 	double eval(const Matrix& x, const Matrix& y);
 	void print_eval(const Matrix& x, const Matrix& y);
+
+	void load_model(const std::string& path);
+	void save_model(const std::string& path);
 };

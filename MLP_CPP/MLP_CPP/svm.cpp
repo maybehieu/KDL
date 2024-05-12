@@ -30,8 +30,8 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 	weight = Matrix(num_features, 1);
 	bias = 0.0;
 
-	// load previous model
-	load_svm_from_file(weight, bias, "../svm_weights/mnist_01.bin");
+	//// load previous model
+	//load_svm_from_file(weight, bias, "../svm_weights/mnist_01.bin");
 
 	std::vector<double> losses;
 	Matrix margins;
@@ -82,7 +82,7 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 		// save SVM state
 		if (*std::min_element(losses.begin(), losses.end()) - losses.back() < std::numeric_limits<double>::epsilon())
 		{
-			save_svm_to_file(weight, bias, modelPath);
+			save_model(modelPath);
 		}
 	}
 
@@ -157,4 +157,14 @@ void SoftMarginSVM::print_eval(const Matrix& X_in, const Matrix& y_in)
 	double f1 = get_f1(y_pred, y);
 
 	printf("SVM precision: %f, recall: %f, F1-score: %f\n", precision, recall, f1);
+}
+
+void SoftMarginSVM::load_model(const std::string& path)
+{
+	load_svm_from_file(weight, bias, path);
+}
+
+void SoftMarginSVM::save_model(const std::string& path)
+{
+	save_svm_to_file(weight, bias, path);
 }

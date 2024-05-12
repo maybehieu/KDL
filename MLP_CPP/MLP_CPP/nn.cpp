@@ -367,7 +367,7 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 		// saving model
 		if (*std::min_element(epoch_losses.begin(), epoch_losses.end()) - epoch_losses.back() < std::numeric_limits<double>::epsilon())
 		{
-			save_model_to_file(parameters, modelPath);
+			save_model(modelPath);
 		}
 	}
 	std::cout << "Saving losses to file...\n";
@@ -383,7 +383,7 @@ Matrix NeuralNet::predict(const Matrix& X_in)
 
 	net_result result = forward(X, true);
 
-	//return result.yhat.argmax(1);
+	return result.yhat.argmax(1);
 	return result.yhat;
 }
 
@@ -395,7 +395,7 @@ void NeuralNet::print_eval(const Matrix& X_in, const Matrix& y_in)
 
 	Matrix y_pred = predict(X);
 	y.transpose();
-	//y = y.argmax(1);
+	y = y.argmax(1);
 
 #ifdef _DEBUG
 	if (y_pred.m_data.size() != y.m_data.size())
@@ -429,7 +429,7 @@ double NeuralNet::eval(const Matrix& X_in, const Matrix& y_in)
 
 	Matrix y_pred = predict(X);
 	y.transpose();
-	//y = y.argmax(1);
+	y = y.argmax(1);
 
 #ifdef _DEBUG
 	if (y_pred.m_data.size() != y.m_data.size())
@@ -575,10 +575,10 @@ void NeuralNet::test()
 
 void NeuralNet::load_model(const std::string& path)
 {
-	
+	load_model_from_file(parameters, path);
 }
 
 void NeuralNet::save_model(const std::string& path)
 {
-	
+	save_model_to_file(parameters, path);
 }

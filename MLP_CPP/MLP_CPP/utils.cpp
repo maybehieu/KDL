@@ -200,10 +200,11 @@ double get_precision(const Matrix& ypred, const Matrix& y)
 		if (ypred.m_data[i] == 1 && y.m_data[i] == 1) {
 			TP++;
 		}
-		else if (ypred.m_data[i] == 1 && y.m_data[i] == -1) {
+		else if (ypred.m_data[i] == 1 && y.m_data[i] == 0) {
 			FP++;
 		}
 	}
+	if (TP + FP == 0) return 0;
 	return static_cast<double>(TP) / (TP + FP);
 }
 
@@ -214,10 +215,11 @@ double get_recall(const Matrix& ypred, const Matrix& y)
 		if (ypred.m_data[i] == 1 && y.m_data[i] == 1) {
 			TP++;
 		}
-		else if (ypred.m_data[i] == -1 && y.m_data[i] == 1) {
+		else if (ypred.m_data[i] == 0 && y.m_data[i] == 1) {
 			FN++;
 		}
 	}
+	if (TP + FN == 0) return 0;
 	return static_cast<double>(TP) / (TP + FN);
 }
 

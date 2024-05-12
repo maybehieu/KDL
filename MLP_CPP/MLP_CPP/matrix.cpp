@@ -507,7 +507,7 @@ Matrix& Matrix::load_data(const std::string& file)
 	std::ifstream inFile;
 	inFile.open(file, std::ios::in | std::ios::binary);
 
-	unsigned int rows, columns;
+	size_t rows, columns;
 	inFile.read((char*)&rows, sizeof(rows));
 	inFile.read((char*)&columns, sizeof(columns));
 	m_rows = rows, m_cols = columns;
@@ -522,7 +522,7 @@ Matrix& Matrix::load_data(const std::string& file)
 
 Matrix& Matrix::load_data(std::ifstream& inFile)
 {
-	unsigned int rows, columns;
+	size_t rows, columns;
 	inFile.read((char*)&rows, sizeof(rows));
 	inFile.read((char*)&columns, sizeof(columns));
 	m_rows = rows, m_cols = columns;
