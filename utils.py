@@ -1,7 +1,12 @@
 import struct
 from array import array
 import numpy as np
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import (
+    StandardScaler,
+    LabelEncoder,
+    OneHotEncoder,
+    LabelBinarizer,
+)
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from ucimlrepo import fetch_ucirepo
@@ -121,9 +126,10 @@ class Dataloader:
             self.X_train = scaler.fit_transform(X_train)
             self.X_test = scaler.transform(X_test)
 
-            # Convert the labels to -1 and 1
-            self.y_train = np.where(y_train == l1, -1, 1)
-            self.y_test = np.where(y_test == l1, -1, 1)
+            # One-hot encode the labels
+            le = OneHotEncoder()
+            self.y_train = le.fit_transform(y_train.reshape(-1, 1)).toarray()
+            self.y_test = le.transform(y_test.reshape(-1, 1)).toarray()
 
         elif name == "iris":
             print("fetching iris dataset")
@@ -154,9 +160,10 @@ class Dataloader:
                 X, y, test_size=0.2, random_state=42
             )
 
-            # Convert the labels to -1 and 1
-            self.y_train = np.where(self.y_train == l1, -1, 1)
-            self.y_test = np.where(self.y_test == l1, -1, 1)
+            # One-hot encode the labels
+            le = OneHotEncoder()
+            self.y_train = le.fit_transform(self.y_train.reshape(-1, 1)).toarray()
+            self.y_test = le.transform(self.y_test.reshape(-1, 1)).toarray()
 
         elif name == "mushroom":
             print("fetching mushroom dataset")
@@ -187,9 +194,15 @@ class Dataloader:
                 X, y, test_size=0.2, random_state=42
             )
 
-            # Convert the labels to -1 and 1
-            self.y_train = np.where(self.y_train == "p", -1, 1)
-            self.y_test = np.where(self.y_test == "p", -1, 1)
+            # One-hot encode the labels
+            le = OneHotEncoder()
+            self.y_train = le.fit_transform(self.y_train.reshape(-1, 1)).toarray()
+            self.y_test = le.transform(self.y_test.reshape(-1, 1)).toarray()
+
+        # pre-process to match SVM metrics
+        self.y_train[self.y_train == 0] = -1
+        self.y_test[self.y_test == 0] = -1
+
         print("Dataset: ", self.name)
 
         # print a preview of the data
@@ -237,27 +250,11 @@ class Dataloader:
             self.y_test_shape, self.y_test, f"{self.name}_ytest.txt"
         )
 
+    def export_to_python(self):
+        return self.X_train, self.y_train, self.X_test, self.y_test
+
 
 if __name__ == "__main__":
-    # mnist_dataloader = MNISTDataloader(
-    #     "data/train-images.idx3-ubyte",
-    #     "data/train-labels.idx1-ubyte",
-    #     "data/t10k-images.idx3-ubyte",
-    #     "data/t10k-labels.idx1-ubyte",
-    # )
-    #
-    # (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
-    # y_train = mnist_dataloader.convert_labels_to_one_hot(y_train)
-    # y_test = mnist_dataloader.convert_labels_to_one_hot(y_test)
-    # print(np.asarray(x_train[0]).shape)
-    # print(np.asarray(y_train[0]))
-
-    # df = pd.read_csv('./MLP_CPP/data/writing/data.csv', header=None)
-
-    # label = df[0]
-    # # label = (20000,)
-    # feature = df.drop(0, axis=1)
-
     datasets = ["mnist", "iris", "mushroom"]
     for dataset in datasets:
         loader = Dataloader(None, None, dataset)
