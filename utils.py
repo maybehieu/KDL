@@ -74,7 +74,7 @@ class MNISTDataloader(object):
 
 
 class Dataloader:
-    def __init__(self, X, y, name):
+    def __init__(self, X, y, name, class1, class2):
         self.name = name
         if name == "writing":
             # Filter only classes 0 and 1
@@ -145,8 +145,8 @@ class Dataloader:
 
             print(X.shape, y.shape)
 
-            l1 = "Iris-setosa"
-            l2 = "Iris-versicolor"
+            l1 = class1 if class1 else "Iris-setosa"
+            l2 = class2 if class2 else "Iris-versicolor"
 
             # Filter only classes l1 and l2
             mask = (y == l1) | (y == l2)
@@ -257,6 +257,6 @@ class Dataloader:
 if __name__ == "__main__":
     datasets = ["mnist", "iris", "mushroom"]
     for dataset in datasets:
-        loader = Dataloader(None, None, dataset)
+        loader = Dataloader(None, None, dataset, None, None)
         print(f"Exporting {dataset} to cpp... ")
         loader.export_to_cpp()
