@@ -211,19 +211,6 @@ class Dataloader:
         print("X_test: ", self.X_test[:2])
         print("y_test: ", self.y_test[:2])
 
-        # flatten to export to cpp
-        self.X_train_shape = self.X_train.shape
-        self.X_test_shape = self.X_test.shape
-        self.y_train_shape = self.y_train.shape
-        self.y_test_shape = self.y_test.shape
-        print(
-            self.X_train_shape, self.y_train_shape, self.X_test_shape, self.y_test_shape
-        )
-        self.X_train = self.X_train.flatten()
-        self.X_test = self.X_test.flatten()
-        self.y_train = self.y_train.flatten()
-        self.y_test = self.y_test.flatten()
-
     def print_array_as_string(self, shape, arr, fname=""):
         # print flatten arr as a string to a file
         print(f"Exported shape: {arr.shape}")
@@ -237,17 +224,30 @@ class Dataloader:
         print(formatted_strings, file=open(fname, "w"))
 
     def export_to_cpp(self):
+        # flatten to export to cpp
+        X_train_shape = self.X_train.shape
+        X_test_shape = self.X_test.shape
+        y_train_shape = self.y_train.shape
+        y_test_shape = self.y_test.shape
+        print(
+            X_train_shape, y_train_shape, X_test_shape, y_test_shape
+        )
+        self.X_train = self.X_train.flatten()
+        self.X_test = self.X_test.flatten()
+        self.y_train = self.y_train.flatten()
+        self.y_test = self.y_test.flatten()
+
         self.print_array_as_string(
-            self.X_train_shape, self.X_train, f"{self.name}_xtrain.txt"
+            X_train_shape, self.X_train, f"{self.name}_xtrain.txt"
         )
         self.print_array_as_string(
-            self.y_train_shape, self.y_train, f"{self.name}_ytrain.txt"
+            y_train_shape, self.y_train, f"{self.name}_ytrain.txt"
         )
         self.print_array_as_string(
-            self.X_test_shape, self.X_test, f"{self.name}_xtest.txt"
+            X_test_shape, self.X_test, f"{self.name}_xtest.txt"
         )
         self.print_array_as_string(
-            self.y_test_shape, self.y_test, f"{self.name}_ytest.txt"
+            y_test_shape, self.y_test, f"{self.name}_ytest.txt"
         )
 
     def export_to_python(self):
