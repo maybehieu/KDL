@@ -108,8 +108,8 @@ class Dataloader:
             y_train = np.asarray(y_train)
             y_test = np.asarray(y_test)
             # Filter only classes 0 and 1
-            l1 = 0
-            l2 = 1
+            l1 = 1
+            l2 = 7
             mask = (y_train == l1) | (y_train == l2)
             X_train, y_train = X_train[mask], y_train[mask]
             mask = (y_test == l1) | (y_test == l2)
