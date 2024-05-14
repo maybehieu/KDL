@@ -107,15 +107,15 @@ class Dataloader:
             X_test = np.asarray(x_test)
             y_train = np.asarray(y_train)
             y_test = np.asarray(y_test)
-
             # Filter only classes 0 and 1
             l1 = 0
-            l2 = 2
+            l2 = 1
             mask = (y_train == l1) | (y_train == l2)
             X_train, y_train = X_train[mask], y_train[mask]
             mask = (y_test == l1) | (y_test == l2)
             X_test, y_test = X_test[mask], y_test[mask]
 
+            print(y_test[:10])
             nsamples, nx, ny = X_train.shape
             X_train = X_train.reshape((nsamples, nx * ny))
             nsamples, nx, ny = X_test.shape
@@ -258,5 +258,5 @@ if __name__ == "__main__":
     datasets = ["mnist", "iris", "mushroom"]
     for dataset in datasets:
         loader = Dataloader(None, None, dataset, None, None)
-        print(f"Exporting {dataset} to cpp... ")
-        loader.export_to_cpp()
+        # print(f"Exporting {dataset} to cpp... ")
+        # loader.export_to_cpp()
