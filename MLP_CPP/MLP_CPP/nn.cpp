@@ -38,9 +38,6 @@ void Optimizer::sgd_step(parameters& params, const net_result& grads)
 	net_result g(grads);
 	int N = params.weights.size();
 
-	/*std::for_each(g.grad_weights.begin(), g.grad_weights.end(), [this](Matrix& m) {return m / batch_size; });
-	std::for_each(g.grad_biases.begin(), g.grad_biases.end(), [this](Matrix& m) {return m / batch_size; });*/
-
 	for (int i = N - 1; i >= 0; i--)
 	{
 		result.weights[i] = params.weights[i] - learning_rate * g.grad_weights[N - 1 - i];
@@ -242,7 +239,8 @@ net_result NeuralNet::backward(const net_result& datas, const Matrix& X, const M
 	for (int i = parameters.weights.size() - 2; i >= 0; i--)
 	{
 		// Activation layer
-		output_error = input_error.element_wise_mul(Matrix::apply_func(layers.back(), activation == "relu" ? d_relu : d_sigmoid));
+		output_error = input_error.element_wise_mul(Matrix::apply_func(layers.back(), 
+			activation == "relu" ? d_relu : d_sigmoid));
 
 		// FC layer
 		input_error = parameters.weights[i] * output_error;
@@ -347,25 +345,30 @@ void NeuralNet::fit(const Matrix& X_in, const Matrix& y_in)
 		}
 
 		epoch_losses.push_back(std::accumulate(batch_losses.begin(), batch_losses.end(), .0) / batch_losses.size());
-		if (epoch % 10 == 0)
+
+		if (epoch % 50 == 0)
 		{
 			double train_accuracy = eval(X, y);
-			printf("\rEpoch %d/%d (%f s/it): training loss: %f, training accuracy: %f\n", epoch, epochs, (getTickcount() - e_time) / 1000.0, epoch_losses.back(), train_accuracy);
+			printf("\rEpoch %d/%d (%f s/it): training loss: %f, training accuracy: %f\n", 
+				epoch, epochs, (getTickcount() - e_time) / 1000.0, epoch_losses.back(), train_accuracy);
 
 			//check loss changes for the past number of epochs
 			int num_epoch_to_check = 50;
 			if (epoch >= num_epoch_to_check)
 			{
-				if (std::adjacent_find(epoch_losses.end() - num_epoch_to_check, epoch_losses.end(), std::not_equal_to<>()) == epoch_losses.end())
+				if (std::adjacent_find(epoch_losses.end() - num_epoch_to_check, epoch_losses.end(),
+					std::not_equal_to<>()) == epoch_losses.end())
 				{
-					printf("Epoch %d/%d: training loss hasn't change for %d epochs, stopping training early!\n", epoch, epochs, num_epoch_to_check);
+					printf("Epoch %d/%d: training loss hasn't change for %d epochs, stopping training early!\n", 
+						epoch, epochs, num_epoch_to_check);
 					break;
 				}
 			}
 		}
 
 		// saving model
-		if (*std::min_element(epoch_losses.begin(), epoch_losses.end()) - epoch_losses.back() < std::numeric_limits<double>::epsilon())
+		if (*std::min_element(epoch_losses.begin(), epoch_losses.end()) - epoch_losses.back() 
+			< std::numeric_limits<double>::epsilon())
 		{
 			save_model(modelPath);
 		}
@@ -404,6 +407,7 @@ void NeuralNet::print_eval(const Matrix& X_in, const Matrix& y_in)
 	}
 #endif
 
+	printf("Model's name: %s\n", this->name.c_str());
 	// accuracy
 	std::vector<float> acc;
 	for (size_t i = 0; i < y_pred.m_data.size(); i++)

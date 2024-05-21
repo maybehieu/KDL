@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-SoftMarginSVM::SoftMarginSVM(double constant = 1.0, double learning_rate = 0.001, int epochs = 1000, std::string name="svm")
+SoftMarginSVM::SoftMarginSVM(double constant = 1.0, double learning_rate = 0.001, int epochs = 1000, std::string name = "svm")
 {
 	this->constant = constant;
 
@@ -12,16 +12,17 @@ SoftMarginSVM::SoftMarginSVM(double constant = 1.0, double learning_rate = 0.001
 	this->name = name;
 }
 
-Matrix SoftMarginSVM::cost(const Matrix& in_margins)
+Matrix SoftMarginSVM::cost(const Matrix &in_margins)
 {
 	Matrix margins(in_margins);
 	Matrix reg_term = .5 * Matrix::transpose(weight) * weight;
 	Matrix hinge_loss = 1.0 - margins;
-	std::for_each(hinge_loss.m_data.begin(), hinge_loss.m_data.end(), [](double& x) {x = std::max(x, 0.0); });
+	std::for_each(hinge_loss.m_data.begin(), hinge_loss.m_data.end(), [](double &x)
+				  { x = std::max(x, 0.0); });
 	return reg_term + constant * hinge_loss.sum(-1);
 }
 
-void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
+void SoftMarginSVM::fit(const Matrix &x, const Matrix &y)
 {
 	int num_features = x.get_width();
 	int num_samples = x.get_height();
@@ -29,9 +30,6 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 	// initialize weight and bias
 	weight = Matrix(num_features, 1);
 	bias = 0.0;
-
-	//// load previous model
-	//load_svm_from_file(weight, bias, "../svm_weights/mnist_01.bin");
 
 	std::vector<double> losses;
 	Matrix margins;
@@ -45,7 +43,8 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 
 	for (int epoch = 1; epoch <= epochs; epoch++)
 	{
-		printf("\rEpoch %d/%d (%f s/it): ", epoch, epochs, (getTickcount() - e_time) / 1000.0);
+		printf("\rEpoch %d/%d (%f s/it): ",
+			epoch, epochs, (getTickcount() - e_time) / 1000.0);
 		e_time = getTickcount();
 		margins = Matrix::element_wise_mul(y, x * weight + bias);
 		loss = cost(margins);
@@ -56,7 +55,8 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 		Matrix x_miss(std::vector<double>(), 1, num_features);
 		for (int idx = 0; idx < num_samples; idx++)
 		{
-			if (margins.m_data[idx] >= 1.0) continue;
+			if (margins.m_data[idx] >= 1.0)
+				continue;
 			x_miss.concat(x, idx, 0);
 			y_miss.concat(y, idx, 0);
 		}
@@ -76,11 +76,13 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 		if (epoch % 10 == 0)
 		{
 			double train_acc = eval(x, y);
-			printf("\rEpoch %d/%d (%f s/it): training loss: %f, training accuracy: %f\n", epoch, epochs, (getTickcount() - e_time) / 1000.0, losses.back(), train_acc);
+			printf("\rEpoch %d/%d (%f s/it): training loss: %f, training accuracy: %f\n",
+				   epoch, epochs, (getTickcount() - e_time) / 1000.0, losses.back(), train_acc);
 		}
 
 		// save SVM state
-		if (*std::min_element(losses.begin(), losses.end()) - losses.back() < std::numeric_limits<double>::epsilon())
+		if (*std::min_element(losses.begin(), losses.end()) - losses.back() 
+			< std::numeric_limits<double>::epsilon())
 		{
 			save_model(modelPath);
 		}
@@ -92,19 +94,18 @@ void SoftMarginSVM::fit(const Matrix& x, const Matrix& y)
 	printf("Training complete! Total time taken: %f s\n", (getTickcount() - time) / 1000.0);
 }
 
-Matrix SoftMarginSVM::predict(const Matrix& x)
+Matrix SoftMarginSVM::predict(const Matrix &x)
 {
 	Matrix y = x * weight + bias;
-	std::for_each(y.m_data.begin(), y.m_data.end(), [](double& x)
-		{
+	std::for_each(y.m_data.begin(), y.m_data.end(), [](double &x)
+				  {
 			if (x < 0) x = -1;
 			else if (x - 0.0 < std::numeric_limits<double>::epsilon()) x = 0;
-			else x = 1;
-		});
+			else x = 1; });
 	return y;
 }
 
-double SoftMarginSVM::eval(const Matrix& X_in, const Matrix& y_in)
+double SoftMarginSVM::eval(const Matrix &X_in, const Matrix &y_in)
 {
 	Matrix X(X_in);
 	Matrix y(y_in);
@@ -126,7 +127,7 @@ double SoftMarginSVM::eval(const Matrix& X_in, const Matrix& y_in)
 	return std::accumulate(acc.begin(), acc.end(), .0) / acc.size();
 }
 
-void SoftMarginSVM::print_eval(const Matrix& X_in, const Matrix& y_in)
+void SoftMarginSVM::print_eval(const Matrix &X_in, const Matrix &y_in)
 {
 	Matrix X(X_in);
 	Matrix y(y_in);
@@ -142,14 +143,17 @@ void SoftMarginSVM::print_eval(const Matrix& X_in, const Matrix& y_in)
 #endif
 
 	// accuracy
+	printf("SVM's name: %s\n", this->name.c_str());
 	std::vector<float> acc;
 	for (size_t i = 0; i < y_pred.m_data.size(); i++)
 		acc.push_back(y_pred.m_data[i] - y.m_data[i] < std::numeric_limits<double>::epsilon() ? 1 : 0);
 	printf("SVM accuracy: %f\n", std::accumulate(acc.begin(), acc.end(), .0) / acc.size());
 
 	// convert -1 to 0 for sync (metrics evaluation)
-	std::for_each(y.m_data.begin(), y.m_data.end(), [](double& x){	if (x == -1) x = 0;	});
-	std::for_each(y_pred.m_data.begin(), y_pred.m_data.end(), [](double& x){ if (x == -1) x = 0; });
+	std::for_each(y.m_data.begin(), y.m_data.end(), [](double &x)
+				  {	if (x == -1) x = 0; });
+	std::for_each(y_pred.m_data.begin(), y_pred.m_data.end(), [](double &x)
+				  { if (x == -1) x = 0; });
 
 	// other metrics
 	double precision = get_precision(y_pred, y);
@@ -159,12 +163,12 @@ void SoftMarginSVM::print_eval(const Matrix& X_in, const Matrix& y_in)
 	printf("SVM precision: %f, recall: %f, F1-score: %f\n", precision, recall, f1);
 }
 
-void SoftMarginSVM::load_model(const std::string& path)
+void SoftMarginSVM::load_model(const std::string &path)
 {
 	load_svm_from_file(weight, bias, path);
 }
 
-void SoftMarginSVM::save_model(const std::string& path)
+void SoftMarginSVM::save_model(const std::string &path)
 {
 	save_svm_to_file(weight, bias, path);
 }
